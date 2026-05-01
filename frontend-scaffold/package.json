@@ -27,7 +27,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/akan_nigeria/stellar-tipz.git"
+    "url": "git+https://github.com/Akanimoh12/Stellar-Tipz.git"
   },
   "prettier": "@stellar/prettier-config",
   "keywords": [],
@@ -60,7 +60,6 @@
     "typescript": "^5.5.0",
     "typescript-eslint": "^8.57.2",
     "vite": "^6.3.0",
-    "vite-plugin-imagemin": "^0.6.1",
     "vite-plugin-node-polyfills": "^0.22.0",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^4.1.2"

@@ -128,7 +128,8 @@ const TipPage: React.FC = () => {
     return (
       <PageContainer maxWidth="xl" className="py-20">
         <ErrorState
-          category={categorizeError(fetchError || "Not Found")}
+          category={categorizeError(fetchError || "Not Found").category}
+          message={categorizeError(fetchError || "Not Found").message}
           onRetry={fetchCreator}
         />
       </PageContainer>
@@ -241,7 +242,7 @@ const TipPage: React.FC = () => {
               creator={creator}
               errorMessage={
                 flowError
-                  ? categorizeError(flowError) === "network"
+                  ? categorizeError(flowError).category === "network"
                     ? ERRORS.NETWORK
                     : ERRORS.CONTRACT
                   : undefined
@@ -311,7 +312,7 @@ const TipPage: React.FC = () => {
               txHash={txHash ?? undefined}
               errorMessage={
                 flowError
-                  ? categorizeError(flowError) === "network"
+                  ? categorizeError(flowError).category === "network"
                     ? ERRORS.NETWORK
                     : ERRORS.CONTRACT
                   : undefined

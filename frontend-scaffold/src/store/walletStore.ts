@@ -53,6 +53,8 @@ interface WalletActions {
 type WalletStore = WalletState & WalletActions;
 
 const initialWalletState: WalletState = {
+  wallets: [],
+  activeWalletKey: null,
   publicKey: null,
   connected: false,
   connecting: false,
@@ -67,16 +69,7 @@ const initialWalletState: WalletState = {
 export const useWalletStore = create<WalletStore>()(
   persist(
     (set, get) => ({
-      wallets: [],
-      activeWalletKey: null,
-      publicKey: null,
-      connected: false,
-      connecting: false,
-      isReconnecting: false,
-      error: null,
-      network: 'TESTNET',
-      walletType: null,
-      signingStatus: 'idle',
+      ...initialWalletState,
 
       connect: (publicKey: string, walletType?: string) => {
         const { wallets } = get();
@@ -157,12 +150,16 @@ export const useWalletStore = create<WalletStore>()(
     {
       name: "tipz-wallet",
       onRehydrateStorage: () => (state) => {
-        state?._hasHydrated = true;
+        if (state) {
+          state._hasHydrated = true;
+        }
       },
       storage: createJSONStorage(() => ({
         getItem: (name) => secureStorage.get(name),
         setItem: (name, value) => secureStorage.set(name, value),
-        removeItem: (name) => secureStorage.remove(name),
+        removeItem: async (name) => {
+          secureStorage.remove(name);
+        },
       })),
       partialize: (state) => ({
         wallets: state.wallets,

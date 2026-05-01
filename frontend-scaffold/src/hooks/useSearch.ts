@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Fuse, { IFuseOptions } from "fuse.js";
+import type { FuseResult, FuseResultMatch } from "fuse.js";
 import type { Profile } from "../types";
 import { useContract } from "./useContract";
 import { env } from "../helpers/env";
@@ -155,12 +156,12 @@ export const useSearch = () => {
         return;
       }
 
-      const fuseResults = fuseRef.current.search(trimmed, { limit: 10 });
+      const fuseResults: FuseResult<Profile>[] = fuseRef.current.search(trimmed, { limit: 10 });
 
       const searchResults: SearchResult[] = fuseResults.map((result) => ({
         item: result.item,
         matches: result.matches
-          ? result.matches.map((m) => ({
+          ? result.matches.map((m: FuseResultMatch) => ({
               indices: m.indices as [number, number][],
               key: m.key || "",
             }))

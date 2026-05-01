@@ -6,11 +6,11 @@ import { useContract } from "@/hooks";
 import { LeaderboardEntry } from "@/types/contract";
 import ProfileCard from "@/components/shared/ProfileCard";
 import ProfileCardSkeleton from "@/components/shared/ProfileCardSkeleton";
-import Skeleton from "@/components/ui/Skeleton";
 import EmptyState from "@/components/ui/EmptyState";
 import ErrorState from "@/components/shared/ErrorState";
 import { categorizeError } from "@/helpers/error";
 import { env } from "@/helpers/env";
+import { mockLeaderboard } from "@/features/mockData";
 
 export default function TopCreatorsSection() {
   const [creators, setCreators] = useState<LeaderboardEntry[]>([]);
@@ -44,33 +44,8 @@ export default function TopCreatorsSection() {
   }, [getLeaderboard]);
 
   useEffect(() => {
-    if (
-      !env.contractId &&
-      !env.useMockData &&
-      import.meta.env.MODE !== "test"
-    ) {
-      return;
-    }
-
-    let active = true;
-    getLeaderboard(5)
-      .then((data) => {
-        if (active) {
-          setCreators(data);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (active) {
-          console.error("Failed to fetch leaderboard:", err);
-          setError(String(err));
-          setLoading(false);
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, [getLeaderboard]);
+    void fetchCreators();
+  }, [fetchCreators]);
 
   const handleRetry = useCallback(() => {
     if (
@@ -138,7 +113,11 @@ export default function TopCreatorsSection() {
             ))}
           </div>
         ) : error ? (
-          <ErrorState category={categorizeError(error)} onRetry={handleRetry} />
+          <ErrorState
+            category={categorizeError(error).category}
+            message={categorizeError(error).message}
+            onRetry={handleRetry}
+          />
         ) : creators.length === 0 ? (
           <div className="border-3 border-black bg-white">
             <EmptyState

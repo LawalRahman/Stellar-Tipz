@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, cleanup, act } from '@testing-library/react';
 import { afterEach, describe, it, expect } from 'vitest';
-import OptimizedImage from '../components/ui/OptimizedImage';
+import OptimizedImage from '../components/ui/optimizedImage';
 import { useHeroPreload } from '../hooks/useHeroPreload';
 
 afterEach(() => {

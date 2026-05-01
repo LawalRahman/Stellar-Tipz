@@ -6,7 +6,7 @@ import { getExplorerTxUrl } from '../../helpers/network';
 import Button from '../../components/ui/Button';
 
 interface TipReceiptProps {
-  txHash: string;
+  txHash?: string;
   amount?: string;
   sender?: string;
   receiver?: string;
@@ -20,6 +20,7 @@ const TipReceipt: React.FC<TipReceiptProps> = ({
   receiver,
   timestamp,
 }) => {
+  const safeTxHash = txHash ?? "unknown";
   const receiptRef = useRef<HTMLDivElement>(null);
   const [displayTimestamp] = React.useState(() => timestamp || Date.now());
 
@@ -32,7 +33,7 @@ const TipReceipt: React.FC<TipReceiptProps> = ({
       });
       const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
-      link.download = `tipz-receipt-${txHash.slice(0, 8)}.png`;
+      link.download = `tipz-receipt-${safeTxHash.slice(0, 8)}.png`;
       link.href = dataUrl;
       link.click();
     } catch (error) {
@@ -40,7 +41,7 @@ const TipReceipt: React.FC<TipReceiptProps> = ({
     }
   };
 
-  const txUrl = getExplorerTxUrl(txHash);
+  const txUrl = txHash ? getExplorerTxUrl(txHash) : "#";
 
   return (
     <div className="mt-8">
@@ -75,7 +76,7 @@ const TipReceipt: React.FC<TipReceiptProps> = ({
           )}
           <div className="flex flex-col gap-1 pt-2">
             <span className="text-sm font-bold text-gray-500 uppercase tracking-wider">Transaction Hash</span>
-            <span className="text-xs font-mono bg-gray-100 p-2 border border-gray-300 break-all">{txHash}</span>
+            <span className="text-xs font-mono bg-gray-100 p-2 border border-gray-300 break-all">{safeTxHash}</span>
           </div>
         </div>
 
@@ -99,7 +100,7 @@ const TipReceipt: React.FC<TipReceiptProps> = ({
           rel="noopener noreferrer"
           className="flex-1 sm:flex-none"
         >
-          <Button variant="outline" icon={<ExternalLink size={18} />} className="w-full">
+          <Button variant="outline" icon={<ExternalLink size={18} />} className="w-full" disabled={!txHash}>
             View on Explorer
           </Button>
         </a>

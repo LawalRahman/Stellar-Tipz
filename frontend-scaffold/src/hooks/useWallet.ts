@@ -341,6 +341,7 @@ export const useWallet = () => {
       network,
       walletType,
       signingStatus,
+      setError,
       ...actions,
     }),
     [
@@ -354,6 +355,7 @@ export const useWallet = () => {
       network,
       walletType,
       signingStatus,
+      setError,
       actions,
     ],
   );

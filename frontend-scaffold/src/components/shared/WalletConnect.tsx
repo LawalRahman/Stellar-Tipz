@@ -6,7 +6,7 @@ import { useWallet, useProfile } from '../../hooks';
 import { SUPPORTED_WALLETS } from '../../hooks/useWallet';
 import { truncateAddress } from '../../services';
 import Modal from '../ui/Modal';
-import { ExternalLink, HelpCircle, Download, CheckCircle2, Wallet } from 'lucide-react';
+import { HelpCircle, Download, CheckCircle2, Wallet } from 'lucide-react';
 
 interface WalletConnectProps {
   className?: string;

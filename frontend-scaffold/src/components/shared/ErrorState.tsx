@@ -123,7 +123,7 @@ const ErrorState: React.FC<ErrorStateProps> = ({
           
           <Button
             onClick={handleGoHome}
-            variant="secondary"
+            variant="outline"
             className="w-full flex items-center justify-center gap-2"
           >
             <Home size={18} />

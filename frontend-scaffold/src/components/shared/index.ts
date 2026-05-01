@@ -1,5 +1,4 @@
 export { default as AmountDisplay } from "./AmountDisplay";
-export { default as CopyButton } from "./CopyButton";
 export { default as CreditBadge } from "./CreditBadge";
 export { default as ErrorBoundary } from "./ErrorBoundary";
 export { default as GlobalSearch } from "./GlobalSearch";
