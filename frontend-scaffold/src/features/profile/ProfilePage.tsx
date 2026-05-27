@@ -3,6 +3,7 @@ import { ExternalLink, PenSquare, Wallet2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import PageContainer from "../../components/layout/PageContainer";
+import Breadcrumbs from "../../components/shared/Breadcrumbs";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import ErrorState from "../../components/shared/ErrorState";
@@ -135,6 +136,7 @@ const ProfilePage: React.FC = () => {
   if (!isRegistered) {
     return (
       <PageContainer maxWidth="xl" className="py-10">
+        <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Profile' }]} />
         <div className="max-w-2xl mx-auto space-y-8">
           <div className="text-center space-y-4">
             <h1 className="text-4xl font-black uppercase">
@@ -158,6 +160,7 @@ const ProfilePage: React.FC = () => {
 
   return (
     <PageContainer maxWidth="xl" className="space-y-10 py-10">
+      <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Profile' }]} />
       {/* Main Profile View Card */}
       <section aria-label="Profile summary">
         <ProfileView profile={profile} />

@@ -8,6 +8,7 @@ import {
 import { Link, useParams } from "react-router-dom";
 
 import PageContainer from "../../components/layout/PageContainer";
+import Breadcrumbs from "../../components/shared/Breadcrumbs";
 import AmountDisplay from "../../components/shared/AmountDisplay";
 import CreditBadge from "../../components/shared/CreditBadge";
 import Avatar from "../../components/ui/Avatar";
@@ -122,6 +123,10 @@ const TipPage: React.FC = () => {
 
   return (
     <PageContainer maxWidth="xl" className="space-y-8 py-10">
+      <Breadcrumbs items={[
+        { label: 'Home', href: '/' },
+        { label: `@${creator.username}` },
+      ]} />
       <section aria-labelledby="tip-creator-heading" className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <Card className="space-y-6" padding="lg">
           <div className="flex flex-col gap-5 border-b-2 border-dashed border-black pb-6 md:flex-row md:items-center md:justify-between">
