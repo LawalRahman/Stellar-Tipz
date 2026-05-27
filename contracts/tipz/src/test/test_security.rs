@@ -104,14 +104,14 @@ fn test_state_consistency() {
 
     // Total tips received should still be sum of all tips
     assert_eq!(
-        profile1.total_tips_received + profile2.total_tips_received,
+        profile1.profile.total_tips_received + profile2.profile.total_tips_received,
         stats.total_tips_volume
     );
 
     // After withdrawal, balance is reduced but total_tips_received remains unchanged
-    assert_eq!(profile1.balance, 500_i128);
-    assert_eq!(profile2.balance, 1000_i128);
-    assert_eq!(profile1.total_tips_received, 1000_i128);
+    assert_eq!(profile1.profile.balance, 500_i128);
+    assert_eq!(profile2.profile.balance, 1000_i128);
+    assert_eq!(profile1.profile.total_tips_received, 1000_i128);
 
     // Ensure fees collected + net withdrawn + remaining balances == total tips volume
     // Fee is 200 bps (2%) of 500 = 10. Net is 490.
@@ -137,7 +137,7 @@ fn test_storage_bounds() {
     }
 
     let profile = client.get_profile(&creator);
-    assert_eq!(profile.total_tips_count, 10);
+    assert_eq!(profile.profile.total_tips_count, 10);
 
     let recent_tips = client.get_recent_tips(&creator, &50, &0);
     assert_eq!(recent_tips.len(), 10);

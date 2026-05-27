@@ -81,11 +81,11 @@ fn test_verification_status_keys_unique_across_addresses() {
     env.as_contract(&id, || {
         env.storage()
             .persistent()
-            .set(&DataKey::VerificationStatus(a), &true);
+            .set(&DataKey::VerificationRequest(a), &true);
         assert!(!env
             .storage()
             .persistent()
-            .has(&DataKey::VerificationStatus(b)));
+            .has(&DataKey::VerificationRequest(b)));
     });
 }
 
@@ -139,7 +139,7 @@ fn test_verification_status_vs_profile_keys_unique() {
     env.as_contract(&id, || {
         env.storage()
             .instance()
-            .set(&DataKey::VerificationStatus(a.clone()), &true);
+            .set(&DataKey::VerificationRequest(a.clone()), &true);
         assert!(!env.storage().instance().has(&DataKey::Profile(a)));
     });
 }

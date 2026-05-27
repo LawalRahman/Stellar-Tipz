@@ -122,7 +122,7 @@ fn test_send_tip_success() {
     env.as_contract(&contract_id, || {
         let tip: Tip = env.storage().temporary().get(&DataKey::Tip(0)).unwrap();
         assert_eq!(tip.id, 0);
-        assert_eq!(tip.tipper, Some(tipper));
+        assert_eq!(tip.benefactor, Some(tipper));
         assert_eq!(tip.creator, creator);
         assert_eq!(tip.amount, amount);
     });
@@ -385,11 +385,11 @@ fn test_send_tip_updates_leaderboard_once() {
     client.send_tip(&tipper, &creator, &amount, &message, &false);
 
     env.as_contract(&contract_id, || {
-        let entries = crate::leaderboard::get_leaderboard(&env, 0);
+        let entries = crate::leaderboard::get_leaderboard(&env, crate::types::LeaderboardPeriod::AllTime, 0);
         assert_eq!(entries.len(), 1);
         let entry = entries.get(0).unwrap();
         assert_eq!(entry.address, creator);
-        assert_eq!(entry.total_tips_received, amount);
+        assert_eq!(entry.amount, amount);
 
         let profile: Profile = env
             .storage()

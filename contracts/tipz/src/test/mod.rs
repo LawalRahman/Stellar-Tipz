@@ -23,6 +23,7 @@ mod test_profiles;
 mod test_register;
 mod test_security;
 mod test_stats;
+mod test_snapshots;
 mod test_storage;
 mod test_streaks;
 mod test_subscriptions;

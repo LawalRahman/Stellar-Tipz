@@ -117,5 +117,5 @@ fn test_execute_due_subscription() {
     assert_eq!(token_client.balance(&contract_id), 100_000_000);
 
     let profile = client.get_profile(&creator);
-    assert_eq!(profile.total_tips_received, 100_000_000);
+    assert_eq!(profile.profile.total_tips_received, 100_000_000);
 }
