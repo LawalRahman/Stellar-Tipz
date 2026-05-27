@@ -1,5 +1,5 @@
 import React from "react";
-import { Bell, LayoutDashboard, Wallet, X } from "lucide-react";
+import { Bell, LayoutDashboard, Wallet, X, Flame } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import PageContainer from "@/components/layout/PageContainer";
@@ -18,6 +18,8 @@ import TipQRCode from "@/features/profile/TipQRCode";
 import Skeleton from "@/components/ui/Skeleton";
 import DashboardStatsSkeleton from "./DashboardStatsSkeleton";
 import EarningsChart from "./EarningsChart";
+import AchievementNotification from "@/features/achievements/AchievementNotification";
+import { useAchievements } from "@/hooks/useAchievements";
 
 import EarningsTab from "./EarningsTab";
 import OverviewTab from "./OverviewTab";
@@ -130,6 +132,11 @@ const DashboardPage: React.FC = () => {
 
   const creator = profile;
 
+  const { newAchievement, dismissNotification, unlockedIds } = useAchievements({
+    tipCount: Number(creator.totalTipsCount ?? 0),
+    streak: creator.streak ?? 0,
+  });
+
   const tabs = [
     {
       id: "overview",
@@ -203,6 +210,12 @@ const DashboardPage: React.FC = () => {
               {creator.displayName || `@${creator.username}`}
             </span>
           </p>
+          {(creator.streak ?? 0) > 0 && (
+            <p className="mt-1 flex items-center gap-1.5 text-sm font-black uppercase text-orange-600">
+              <Flame size={16} />
+              {creator.streak} day streak
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Link to="/profile">
@@ -246,6 +259,10 @@ const DashboardPage: React.FC = () => {
 
       <Tabs tabs={tabs} defaultTab="overview" />
     </PageContainer>
+    <AchievementNotification
+      achievement={newAchievement}
+      onDismiss={dismissNotification}
+    />
     </DashboardProvider>
   );
 };

@@ -1,4 +1,5 @@
 export { default as AmountDisplay } from "./AmountDisplay";
+export { default as QRCode } from "./QRCode";
 export { default as CreditBadge } from "./CreditBadge";
 export { default as ErrorBoundary } from "./ErrorBoundary";
 export { default as GlobalSearch } from "./GlobalSearch";

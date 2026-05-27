@@ -19,6 +19,8 @@ import RegisterForm from "./RegisterForm";
 import WithdrawModal from "./WithdrawModal";
 import TipQRCode from "./TipQRCode";
 import EmbedCodeGenerator from "./EmbedCodeGenerator";
+import AchievementGallery from "@/features/achievements/AchievementGallery";
+import { useAchievements } from "@/hooks/useAchievements";
 
 /**
  * ProfilePage is a protected route that displays the connected user's profile.
@@ -30,6 +32,7 @@ const ProfilePage: React.FC = () => {
   const { getStats } = useContract();
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [feeBps, setFeeBps] = useState(250); // Default to 250 (2.5%) as fallback
+  const { unlockedIds } = useAchievements({ tipCount: profile?.totalTipsCount ?? 0 });
 
   usePageTitle(
     loading
@@ -200,6 +203,13 @@ const ProfilePage: React.FC = () => {
             </h2>
             <Card padding="lg" className="border-4 shadow-brutalist">
               <EmbedCodeGenerator username={profile.username} />
+            </Card>
+          </section>
+
+          {/* Achievements Section */}
+          <section role="region" aria-labelledby="achievements-heading" className="space-y-4">
+            <Card padding="lg" className="border-4 shadow-brutalist">
+              <AchievementGallery unlockedIds={unlockedIds} />
             </Card>
           </section>
         </div>
