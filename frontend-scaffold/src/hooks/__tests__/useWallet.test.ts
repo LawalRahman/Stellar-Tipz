@@ -16,7 +16,10 @@
  * - the kit is configured for the testnet network at construction time
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { act, renderHook } from "@testing-library/react";
+import { useWallet } from "../useWallet";
+import { useWalletStore } from "../../store/walletStore";
+import * as walletKitModule from "@creit.tech/stellar-wallets-kit";
+import { ERRORS } from "../../helpers/error";
 
 import {
   mockWalletsKitFactory,
@@ -32,23 +35,23 @@ vi.mock("@creit.tech/stellar-wallets-kit", () => mockWalletsKitFactory());
 import { useWallet } from "../useWallet";
 import { useWalletStore } from "../../store/walletStore";
 
-beforeEach(() => {
-  // Reset both the kit mock and the zustand store before every test so state
-  // does not leak between cases. The store uses `persist` middleware (writes to
-  // localStorage), so clearing the storage is required to prevent leakage.
-  resetWalletKit();
-  localStorage.clear();
-  useWalletStore.setState({
-    publicKey: null,
-    activeWalletKey: null,
-    wallets: [],
-    connected: false,
-    connecting: false,
-    isReconnecting: false,
-    error: null,
-    network: "TESTNET",
-    walletType: null,
-    signingStatus: "idle",
+describe("useWallet", () => {
+  beforeEach(() => {
+    // Reset the store before each test
+    useWalletStore.setState({
+      publicKey: null,
+      connected: false,
+      connecting: false,
+      error: null,
+      walletError: null,
+      network: "TESTNET",
+    });
+    vi.clearAllMocks();
+    Object.values(mockWalletKit).forEach((mockFn) => {
+      if (typeof mockFn === "function" && "mockReset" in mockFn) {
+        (mockFn as ReturnType<typeof vi.fn>).mockReset();
+      }
+    });
   });
 });
 
@@ -119,10 +122,14 @@ describe("useWallet — connect", () => {
       await walletKitInstance().pickWallet("freighter");
     });
 
-    expect(result.current.publicKey).toBeNull();
-    expect(result.current.connected).toBe(false);
-    expect(result.current.connecting).toBe(false);
-    expect(result.current.error).toContain("rejected");
+    await waitFor(() => {
+      expect(result.current.publicKey).toBeNull();
+      expect(result.current.connected).toBe(false);
+      expect(result.current.connecting).toBe(false);
+      expect(result.current.error).toBe(ERRORS.WALLET);
+      expect(result.current.walletError).not.toBeNull();
+      expect(result.current.walletError?.type).toBe("unknown");
+    });
   });
 
   it("supports connecting via xBull as well as Freighter", async () => {
