@@ -34,6 +34,7 @@ mod test_subscriptions;
 mod test_tips;
 mod test_ttl_desync;
 mod test_update_profile;
+mod test_upgrade;
 mod test_validation;
 mod test_versioning;
 mod test_withdraw;

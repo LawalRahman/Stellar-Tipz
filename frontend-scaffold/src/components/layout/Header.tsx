@@ -72,6 +72,9 @@ const Header: React.FC = () => {
     );
   };
 
+  const isActivePath = (path: string) =>
+    pathname === path || pathname.startsWith(path + "/");
+
   return (
     <header
       aria-label="Site header"
@@ -90,31 +93,56 @@ const Header: React.FC = () => {
         <nav aria-label="Primary navigation" className="hidden items-center gap-6 md:flex">
           <Link
             to="/leaderboard"
-            className={`text-sm font-bold uppercase tracking-wide nav-indicator ${pathname === '/leaderboard' ? 'active' : ''}`}
+            aria-current={isActivePath("/leaderboard") ? "page" : undefined}
+            className={`text-sm uppercase tracking-wide nav-indicator ${
+              isActivePath("/leaderboard")
+                ? "font-black border-b-2 border-black active"
+                : "font-bold hover:underline"
+            }`}
           >
             {t("nav.leaderboard")}
           </Link>
           <Link
             to="/help"
-            className="text-sm font-bold uppercase tracking-wide hover:underline"
+            aria-current={isActivePath("/help") ? "page" : undefined}
+            className={`text-sm uppercase tracking-wide nav-indicator ${
+              isActivePath("/help")
+                ? "font-black border-b-2 border-black active"
+                : "font-bold hover:underline"
+            }`}
           >
             Help
           </Link>
           <Link
             to="/dashboard"
-            className={`text-sm font-bold uppercase tracking-wide nav-indicator ${pathname === '/dashboard' ? 'active' : ''}`}
+            aria-current={isActivePath("/dashboard") ? "page" : undefined}
+            className={`text-sm uppercase tracking-wide nav-indicator ${
+              isActivePath("/dashboard")
+                ? "font-black border-b-2 border-black active"
+                : "font-bold hover:underline"
+            }`}
           >
             {navDashboard}
           </Link>
           <Link
             to="/transactions"
-            className={`text-sm font-bold uppercase tracking-wide nav-indicator ${pathname === '/transactions' ? 'active' : ''}`}
+            aria-current={isActivePath("/transactions") ? "page" : undefined}
+            className={`text-sm uppercase tracking-wide nav-indicator ${
+              isActivePath("/transactions")
+                ? "font-black border-b-2 border-black active"
+                : "font-bold hover:underline"
+            }`}
           >
             Transactions
           </Link>
           <Link
             to="/profile"
-            className={`text-sm font-bold uppercase tracking-wide nav-indicator ${pathname === '/profile' ? 'active' : ''}`}
+            aria-current={isActivePath("/profile") ? "page" : undefined}
+            className={`text-sm uppercase tracking-wide nav-indicator ${
+              isActivePath("/profile")
+                ? "font-black border-b-2 border-black active"
+                : "font-bold hover:underline"
+            }`}
           >
             {t("nav.profile")}
           </Link>
