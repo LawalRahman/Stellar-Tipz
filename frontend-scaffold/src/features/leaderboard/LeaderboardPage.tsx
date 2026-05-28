@@ -1,5 +1,4 @@
-import React, { useState, useMemo } from "react";
-import { Crown, Medal, Trophy, Loader2 } from "lucide-react";
+
 import { Link } from "react-router-dom";
 
 import PageContainer from "../../components/layout/PageContainer";
@@ -7,7 +6,9 @@ import AmountDisplay from "../../components/shared/AmountDisplay";
 import CreditBadge from "../../components/shared/CreditBadge";
 import Avatar from "../../components/ui/Avatar";
 import Card from "../../components/ui/Card";
+
 import ErrorState from "../../components/shared/ErrorState";
+import PullToRefresh from "../../components/shared/PullToRefresh";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useContract } from "@/hooks/useContract";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
@@ -65,6 +66,7 @@ const LeaderboardPage: React.FC = () => {
   }
 
   return (
+    <PullToRefresh onRefresh={refetch}>
     <PageContainer maxWidth="xl" className="space-y-8 py-10">
       <section aria-labelledby="leaderboard-heading" className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
         <Card className="space-y-5 bg-yellow-100" padding="lg" hover>
@@ -122,46 +124,6 @@ const LeaderboardPage: React.FC = () => {
             </Link>
           </div>
 
-          {entries.length === 0 ? (
-            <div className="text-center py-20 border-2 border-dashed border-black">
-              <p className="font-black uppercase text-gray-800 dark:text-gray-200">No creators found on the leaderboard yet.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="overflow-x-auto">
-                <table className="min-w-full border-collapse">
-                  <thead>
-                    <tr className="border-b-2 border-black text-left">
-                      <th scope="col" className="px-4 py-3 text-xs font-black uppercase tracking-[0.2em]">Rank</th>
-                      <th scope="col" className="px-4 py-3 text-xs font-black uppercase tracking-[0.2em]">Creator</th>
-                      <th scope="col" className="px-4 py-3 text-xs font-black uppercase tracking-[0.2em]">Volume</th>
-                      <th scope="col" className="px-4 py-3 text-xs font-black uppercase tracking-[0.2em]">Credit</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {remainingEntries.map((entry, index) => {
-                      const rank = index + 4; // +4 because top 3 are shown separately
-                      return (
-                        <tr key={entry.address} className="border-b border-gray-300 hover:bg-gray-50 transition-colors">
-                          <td className="px-4 py-4 text-sm font-black">{rank}</td>
-                          <td className="px-4 py-4">
-                            <Link to={`/@${entry.username}`} className="flex items-center gap-3">
-                              <Avatar address={entry.address} alt={entry.username} fallback={entry.username} size="md" />
-                              <span className="font-black uppercase">{entry.username}</span>
-                            </Link>
-                          </td>
-                          <td className="px-4 py-4">
-                            <AmountDisplay amount={entry.totalTipsReceived} className="text-sm" />
-                          </td>
-                          <td className="px-4 py-4">
-                            <CreditBadge score={entry.creditScore} />
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
 
               {/* Loading indicator */}
               {loading && (
@@ -191,6 +153,7 @@ const LeaderboardPage: React.FC = () => {
         {leaderboardAnnouncement}
       </div>
     </PageContainer>
+    </PullToRefresh>
   );
 };
 
