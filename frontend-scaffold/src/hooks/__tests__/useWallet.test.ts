@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useWallet } from "../useWallet";
 import { useWalletStore } from "../../store/walletStore";
 import * as walletKitModule from "@creit.tech/stellar-wallets-kit";
+import { ERRORS } from "../../helpers/error";
 
 interface WalletSelectionHandler {
   onWalletSelected: (option: { id: string }) => Promise<void>;
@@ -27,6 +28,7 @@ describe("useWallet", () => {
       connected: false,
       connecting: false,
       error: null,
+      walletError: null,
       network: "TESTNET",
     });
     vi.clearAllMocks();
@@ -144,7 +146,9 @@ describe("useWallet", () => {
       expect(result.current.publicKey).toBeNull();
       expect(result.current.connected).toBe(false);
       expect(result.current.connecting).toBe(false);
-      expect(result.current.error).toBe("Connection failed");
+      expect(result.current.error).toBe(ERRORS.WALLET);
+      expect(result.current.walletError).not.toBeNull();
+      expect(result.current.walletError?.type).toBe("unknown");
     });
   });
 

@@ -2,6 +2,7 @@ import React from 'react';
 import Button from '../ui/Button';
 import Toast from '../ui/Toast';
 import CreditBadge from './CreditBadge';
+import WalletErrorRecovery from './WalletErrorRecovery';
 import { useWallet, useProfile } from '../../hooks';
 import { truncateAddress } from '../../services';
 
@@ -10,7 +11,7 @@ interface WalletConnectProps {
 }
 
 const WalletConnect: React.FC<WalletConnectProps> = ({ className }) => {
-  const { publicKey, connected, connecting, error, connect, disconnect } = useWallet();
+  const { publicKey, connected, connecting, error, walletError, connect, disconnect } = useWallet();
   const { profile } = useProfile();
 
   if (connected && publicKey) {
@@ -40,13 +41,15 @@ const WalletConnect: React.FC<WalletConnectProps> = ({ className }) => {
         {connecting ? 'Connecting...' : 'Connect Wallet'}
       </Button>
 
-      {error && (
+      {walletError ? (
+        <WalletErrorRecovery onRetry={connect} />
+      ) : error ? (
         <Toast
           message={error}
           type="error"
           onClose={() => {}}
         />
-      )}
+      ) : null}
     </>
   );
 };
