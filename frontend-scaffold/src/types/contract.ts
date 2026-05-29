@@ -17,6 +17,16 @@ export interface RawProfile {
   balance: string;
   registered_at: number;
   updated_at: number;
+  verification?: {
+    is_verified: boolean;
+    verification_type?: string;
+    verified_at?: number;
+    revoked_at?: number;
+  };
+  domain?: string;
+  domain_verified?: boolean;
+  domain_verified_at?: number;
+  custom_min_tip?: string;
 }
 
 /** Raw tip record as returned by the contract before key mapping. */
@@ -113,14 +123,14 @@ export interface Streak {
 }
 
 /** Credit score tiers */
-export type CreditTier = 'new' | 'bronze' | 'silver' | 'gold' | 'diamond';
+export type CreditTier = "new" | "bronze" | "silver" | "gold" | "diamond";
 
 export const getCreditTier = (score: number): CreditTier => {
-  if (score >= 80) return 'diamond';
-  if (score >= 60) return 'gold';
-  if (score >= 40) return 'silver';
-  if (score >= 20) return 'bronze';
-  return 'new';
+  if (score >= 80) return "diamond";
+  if (score >= 60) return "gold";
+  if (score >= 40) return "silver";
+  if (score >= 20) return "bronze";
+  return "new";
 };
 
 /** Recurring tip subscription from the contract */

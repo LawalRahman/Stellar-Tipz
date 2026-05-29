@@ -33,7 +33,7 @@ import {
 } from "../types/contract";
 import { ProfileFormData } from "../types/profile";
 import { xlmToStroop } from "../helpers/format";
-import { logger } from '../services/logger';
+import { logger } from "../services/logger";
 
 /**
  * Valid Stellar placeholder address used as the source account for
@@ -93,24 +93,29 @@ export const useContract = () => {
     [],
   );
 
-  const withRetry = useCallback(async <T,>(
-    operation: () => Promise<T>,
-    attempts = 2,
-  ): Promise<T> => {
-    let lastError: unknown;
-    for (let attempt = 0; attempt < attempts; attempt += 1) {
-      try {
-        return await operation();
-      } catch (error) {
-        lastError = error;
+  const withRetry = useCallback(
+    async <T>(operation: () => Promise<T>, attempts = 2): Promise<T> => {
+      let lastError: unknown;
+      for (let attempt = 0; attempt < attempts; attempt += 1) {
+        try {
+          return await operation();
+        } catch (error) {
+          lastError = error;
+        }
       }
-    }
-    throw lastError instanceof Error ? lastError : new Error(String(lastError));
-  }, []);
+      throw lastError instanceof Error
+        ? lastError
+        : new Error(String(lastError));
+    },
+    [],
+  );
 
   // Warn once in development when contract ID is not configured
   if (!contractId) {
-    logger.warn('[hooks/useContract]', 'VITE_CONTRACT_ID is not set — contract calls will be skipped.');
+    logger.warn(
+      "[hooks/useContract]",
+      "VITE_CONTRACT_ID is not set — contract calls will be skipped.",
+    );
   }
 
   // --- Read-only Methods ---
@@ -161,7 +166,14 @@ export const useContract = () => {
         return withRetry(() => simulateTx<Profile>(tx, server));
       });
     },
-    [contractId, wallet.publicKey, server, networkDetails, withLoading, withRetry],
+    [
+      contractId,
+      wallet.publicKey,
+      server,
+      networkDetails,
+      withLoading,
+      withRetry,
+    ],
   );
 
   const getLeaderboard = useCallback(
@@ -193,7 +205,14 @@ export const useContract = () => {
         return withRetry(() => simulateTx<LeaderboardEntry[]>(tx, server));
       });
     },
-    [contractId, wallet.publicKey, server, networkDetails, withLoading, withRetry],
+    [
+      contractId,
+      wallet.publicKey,
+      server,
+      networkDetails,
+      withLoading,
+      withRetry,
+    ],
   );
 
   const getStats = useCallback(async (): Promise<ContractStats> => {
@@ -221,7 +240,14 @@ export const useContract = () => {
 
       return withRetry(() => simulateTx<ContractStats>(tx, server));
     });
-  }, [contractId, wallet.publicKey, server, networkDetails, withLoading, withRetry]);
+  }, [
+    contractId,
+    wallet.publicKey,
+    server,
+    networkDetails,
+    withLoading,
+    withRetry,
+  ]);
 
   const getMinTipAmount = useCallback(async (): Promise<string> => {
     // Default of 1 XLM returned when contract is unavailable or not yet deployed
@@ -250,11 +276,20 @@ export const useContract = () => {
         .setTimeout(TimeoutInfinite)
         .build();
 
-      const minTipStroops = await withRetry(() => simulateTx<number>(tx, server));
+      const minTipStroops = await withRetry(() =>
+        simulateTx<number>(tx, server),
+      );
       // Convert stroops to XLM string for display
       return (minTipStroops / 1e7).toString();
     }).catch(() => DEFAULT_MIN_TIP_XLM);
-  }, [contractId, wallet.publicKey, server, networkDetails, withLoading, withRetry]);
+  }, [
+    contractId,
+    wallet.publicKey,
+    server,
+    networkDetails,
+    withLoading,
+    withRetry,
+  ]);
 
   const getCreatorMinTip = useCallback(
     async (creatorAddress: string): Promise<string> => {
@@ -334,7 +369,14 @@ export const useContract = () => {
         return withRetry(() => simulateTx<Tip[]>(tx, server));
       });
     },
-    [contractId, wallet.publicKey, server, networkDetails, withLoading, withRetry],
+    [
+      contractId,
+      wallet.publicKey,
+      server,
+      networkDetails,
+      withLoading,
+      withRetry,
+    ],
   );
 
   const getCreatorTipCount = useCallback(
@@ -363,7 +405,14 @@ export const useContract = () => {
         return withRetry(() => simulateTx<number>(tx, server));
       });
     },
-    [contractId, wallet.publicKey, server, networkDetails, withLoading, withRetry],
+    [
+      contractId,
+      wallet.publicKey,
+      server,
+      networkDetails,
+      withLoading,
+      withRetry,
+    ],
   );
 
   const getTipsByTipper = useCallback(
@@ -396,7 +445,14 @@ export const useContract = () => {
         return withRetry(() => simulateTx<Tip[]>(tx, server));
       });
     },
-    [contractId, wallet.publicKey, server, networkDetails, withLoading, withRetry],
+    [
+      contractId,
+      wallet.publicKey,
+      server,
+      networkDetails,
+      withLoading,
+      withRetry,
+    ],
   );
 
   const getTipperTipCount = useCallback(
@@ -425,7 +481,14 @@ export const useContract = () => {
         return withRetry(() => simulateTx<number>(tx, server));
       });
     },
-    [contractId, wallet.publicKey, server, networkDetails, withLoading, withRetry],
+    [
+      contractId,
+      wallet.publicKey,
+      server,
+      networkDetails,
+      withLoading,
+      withRetry,
+    ],
   );
 
   const getCreditTier = useCallback(
@@ -469,7 +532,14 @@ export const useContract = () => {
         return withRetry(() => simulateTx<Streak>(tx, server));
       });
     },
-    [contractId, wallet.publicKey, server, networkDetails, withLoading, withRetry],
+    [
+      contractId,
+      wallet.publicKey,
+      server,
+      networkDetails,
+      withLoading,
+      withRetry,
+    ],
   );
 
   // --- Write Methods ---
@@ -556,6 +626,72 @@ export const useContract = () => {
     [contractId, wallet, server, networkDetails, withLoading],
   );
 
+  const setDomain = useCallback(
+    async (domain: string): Promise<string> => {
+      const publicKey = wallet.publicKey;
+      if (!publicKey) throw new Error("Wallet not connected");
+
+      return withLoading(async () => {
+        const contract = new Contract(contractId);
+        const txBuilder = await getTxBuilder(
+          publicKey,
+          BASE_FEE,
+          server,
+          networkDetails.networkPassphrase,
+        );
+
+        const tx = txBuilder
+          .addOperation(
+            contract.call(
+              "set_domain",
+              accountToScVal(publicKey),
+              nativeToScVal(domain.trim().toLowerCase()),
+            ),
+          )
+          .setTimeout(TimeoutInfinite)
+          .build();
+
+        const xdr = tx.toXDR();
+        const signedXdr = await wallet.signTransaction(xdr);
+        return submitTx(signedXdr, networkDetails.networkPassphrase, server);
+      });
+    },
+    [contractId, wallet, server, networkDetails, withLoading],
+  );
+
+  const verifyDomain = useCallback(
+    async (creator?: string): Promise<string> => {
+      const publicKey = wallet.publicKey;
+      if (!publicKey) throw new Error("Wallet not connected");
+
+      return withLoading(async () => {
+        const contract = new Contract(contractId);
+        const txBuilder = await getTxBuilder(
+          publicKey,
+          BASE_FEE,
+          server,
+          networkDetails.networkPassphrase,
+        );
+
+        const tx = txBuilder
+          .addOperation(
+            contract.call(
+              "verify_domain",
+              accountToScVal(publicKey),
+              accountToScVal(creator ?? publicKey),
+            ),
+          )
+          .setTimeout(TimeoutInfinite)
+          .build();
+
+        const xdr = tx.toXDR();
+        const signedXdr = await wallet.signTransaction(xdr);
+        return submitTx(signedXdr, networkDetails.networkPassphrase, server);
+      });
+    },
+    [contractId, wallet, server, networkDetails, withLoading],
+  );
+
   const sendTip = useCallback(
     async (
       creator: string,
@@ -634,42 +770,40 @@ export const useContract = () => {
     [contractId, wallet, server, networkDetails, withLoading],
   );
 
-  const deregisterProfile = useCallback(
-    async (): Promise<string> => {
-      const publicKey = wallet.publicKey;
-      if (!publicKey) throw new Error("Wallet not connected");
+  const deregisterProfile = useCallback(async (): Promise<string> => {
+    const publicKey = wallet.publicKey;
+    if (!publicKey) throw new Error("Wallet not connected");
 
-      return withLoading(async () => {
-        const contract = new Contract(contractId);
-        const txBuilder = await getTxBuilder(
-          publicKey,
-          BASE_FEE,
-          server,
-          networkDetails.networkPassphrase,
-        );
+    return withLoading(async () => {
+      const contract = new Contract(contractId);
+      const txBuilder = await getTxBuilder(
+        publicKey,
+        BASE_FEE,
+        server,
+        networkDetails.networkPassphrase,
+      );
 
-        const tx = txBuilder
-          .addOperation(
-            contract.call(
-              "deregister_profile",
-              accountToScVal(publicKey),
-            ),
-          )
-          .setTimeout(TimeoutInfinite)
-          .build();
+      const tx = txBuilder
+        .addOperation(
+          contract.call("deregister_profile", accountToScVal(publicKey)),
+        )
+        .setTimeout(TimeoutInfinite)
+        .build();
 
-        const xdr = tx.toXDR();
-        const signedXdr = await wallet.signTransaction(xdr);
-        return submitTx(signedXdr, networkDetails.networkPassphrase, server);
-      });
-    },
-    [contractId, wallet, server, networkDetails, withLoading],
-  );
+      const xdr = tx.toXDR();
+      const signedXdr = await wallet.signTransaction(xdr);
+      return submitTx(signedXdr, networkDetails.networkPassphrase, server);
+    });
+  }, [contractId, wallet, server, networkDetails, withLoading]);
 
   // --- Subscription Methods ---
 
   const createSubscription = useCallback(
-    async (creator: string, amount: string, intervalDays: number): Promise<string> => {
+    async (
+      creator: string,
+      amount: string,
+      intervalDays: number,
+    ): Promise<string> => {
       const publicKey = wallet.publicKey;
       if (!publicKey) throw new Error("Wallet not connected");
 
@@ -797,7 +931,14 @@ export const useContract = () => {
         return withRetry(() => simulateTx<Subscription[]>(tx, server));
       });
     },
-    [contractId, wallet.publicKey, server, networkDetails, withLoading, withRetry],
+    [
+      contractId,
+      wallet.publicKey,
+      server,
+      networkDetails,
+      withLoading,
+      withRetry,
+    ],
   );
 
   return {
@@ -816,6 +957,8 @@ export const useContract = () => {
     getStreak,
     registerProfile,
     updateProfile,
+    setDomain,
+    verifyDomain,
     sendTip,
     withdrawTips,
     deregisterProfile,

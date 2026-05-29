@@ -14,6 +14,12 @@ import type { ProfileFormData } from "@/types/profile";
 import ProfilePreview from "./ProfilePreview";
 import { THEME_COLORS } from "./profileThemes";
 import { sanitize, sanitizeHTML } from "@/helpers/sanitize";
+import {
+  MAX_BIO_LENGTH,
+  validateBio,
+  validateDisplayName,
+  validateXHandle,
+} from "@/helpers/validation";
 
 type TxStatus =
   | "idle"
@@ -38,13 +44,21 @@ const MAX_BANNER_BYTES = 5 * 1024 * 1024; // 5 MB
 function validate(data: ProfileFormData): FormErrors {
   const errors: FormErrors = {};
 
-  if (!data.displayName.trim() || data.displayName.length > 64) {
-    errors.displayName =
-      "Display name is required and must be 1–64 characters.";
+  const displayNameValidation = validateDisplayName(data.displayName);
+  if (!displayNameValidation.valid) {
+    errors.displayName = displayNameValidation.error;
   }
 
-  if (data.bio && data.bio.length > 280) {
-    errors.bio = "Bio must be 280 characters or fewer.";
+  const bioValidation = validateBio(data.bio);
+  if (!bioValidation.valid) {
+    errors.bio = bioValidation.error;
+  }
+
+  if (data.xHandle.trim()) {
+    const xHandleValidation = validateXHandle(data.xHandle);
+    if (!xHandleValidation.valid) {
+      errors.xHandle = xHandleValidation.error;
+    }
   }
 
   if (data.imageUrl && !isValidUrl(data.imageUrl)) {
@@ -73,7 +87,10 @@ function renderMarkdown(text: string): string {
   const withMarkup = escaped
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
-    .replace(/`(.+?)`/g, "<code class='bg-gray-100 px-1 rounded font-mono text-xs'>$1</code>")
+    .replace(
+      /`(.+?)`/g,
+      "<code class='bg-gray-100 px-1 rounded font-mono text-xs'>$1</code>",
+    )
     .replace(/\n/g, "<br />");
   return sanitizeHTML(withMarkup);
 }
@@ -125,7 +142,18 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({
   const handleChange =
     (field: keyof ProfileFormData) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      setForm((prev) => ({ ...prev, [field]: e.target.value }));
+      const value = e.target.value;
+      setForm((prev) => ({ ...prev, [field]: value }));
+
+      if (field === "bio") {
+        const result = validateBio(value);
+        setErrors((prev) => ({
+          ...prev,
+          bio: result.valid ? undefined : result.error,
+        }));
+        return;
+      }
+
       if (errors[field as keyof FormErrors]) {
         setErrors((prev) => ({ ...prev, [field]: undefined }));
       }
@@ -143,10 +171,39 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({
     setForm((prev) => ({ ...prev, imageUrl: dataUrl }));
   };
 
+  const handleBlur = (field: keyof ProfileFormData) => () => {
+    if (field === "xHandle" && form.xHandle.trim()) {
+      const result = validateXHandle(form.xHandle);
+      setErrors((prev) => ({
+        ...prev,
+        xHandle: result.valid ? undefined : result.error,
+      }));
+    }
+
+    if (field === "bio") {
+      const result = validateBio(form.bio);
+      setErrors((prev) => ({
+        ...prev,
+        bio: result.valid ? undefined : result.error,
+      }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const validationErrors = validate(form);
+    const trimmedForm: ProfileFormData = {
+      ...form,
+      username: form.username.trim(),
+      displayName: form.displayName.trim(),
+      bio: form.bio.trim(),
+      imageUrl: form.imageUrl.trim(),
+      xHandle: form.xHandle.trim(),
+      githubHandle: form.githubHandle?.trim(),
+      websiteUrl: form.websiteUrl?.trim(),
+    };
+
+    const validationErrors = validate(trimmedForm);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
@@ -159,22 +216,26 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({
 
       const data: Partial<ProfileFormData> = {};
 
-      if (form.displayName.trim() !== profile.displayName)
-        data.displayName = form.displayName.trim();
-      if (form.bio.trim() !== profile.bio)
-        data.bio = form.bio.trim();
-      if (form.imageUrl.trim() !== profile.imageUrl)
-        data.imageUrl = form.imageUrl.trim();
-      const xHandleFormatted = form.xHandle.trim().replace(/^@/, "");
-      if (xHandleFormatted !== profile.xHandle)
-        data.xHandle = xHandleFormatted;
+      if (trimmedForm.displayName !== profile.displayName)
+        data.displayName = trimmedForm.displayName;
+      if (trimmedForm.bio !== profile.bio) data.bio = trimmedForm.bio;
+      if (trimmedForm.imageUrl !== profile.imageUrl)
+        data.imageUrl = trimmedForm.imageUrl;
+      if (trimmedForm.xHandle !== profile.xHandle)
+        data.xHandle = trimmedForm.xHandle;
       if (form.bannerUrl) data.bannerUrl = form.bannerUrl;
-      if (form.themeKey && form.themeKey !== "default") data.themeKey = form.themeKey;
-      if (form.githubHandle) data.githubHandle = form.githubHandle.trim().replace(/^@/, "");
-      if (form.websiteUrl) data.websiteUrl = form.websiteUrl.trim();
+      if (form.themeKey && form.themeKey !== "default")
+        data.themeKey = form.themeKey;
+      if (trimmedForm.githubHandle)
+        data.githubHandle = trimmedForm.githubHandle.replace(/^@/, "");
+      if (trimmedForm.websiteUrl) data.websiteUrl = trimmedForm.websiteUrl;
 
       if (Object.keys(data).length === 0) {
-        addToast({ message: "No changes to save.", type: "info", duration: 3000 });
+        addToast({
+          message: "No changes to save.",
+          type: "info",
+          duration: 3000,
+        });
         setTxStatus("idle");
         return;
       }
@@ -186,7 +247,11 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({
       setTxHash(hash);
       setTxStatus("success");
 
-      addToast({ message: "Profile updated successfully!", type: "success", duration: 5000 });
+      addToast({
+        message: "Profile updated successfully!",
+        type: "success",
+        duration: 5000,
+      });
       setTimeout(() => navigate("/profile"), 1500);
     } catch (err) {
       setTxStatus("error");
@@ -196,10 +261,16 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({
     }
   };
 
-  const isSubmitting = ["signing", "submitting", "confirming"].includes(txStatus);
+  const isSubmitting = ["signing", "submitting", "confirming"].includes(
+    txStatus,
+  );
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-8 max-w-lg mx-auto">
+    <form
+      onSubmit={handleSubmit}
+      noValidate
+      className="space-y-8 max-w-lg mx-auto"
+    >
       {/* Username (read-only) */}
       <div>
         <label className="block text-sm font-bold uppercase tracking-wide mb-2">
@@ -251,21 +322,25 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({
         {showBioPreview ? (
           <div
             className="min-h-[6rem] w-full border-2 border-black bg-gray-50 p-3 text-sm leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(form.bio || "No bio yet.") }}
+            dangerouslySetInnerHTML={{
+              __html: renderMarkdown(form.bio || "No bio yet."),
+            }}
           />
         ) : (
           <Textarea
             placeholder="Tell supporters about yourself… (Markdown supported: **bold**, *italic*, `code`)"
             value={form.bio}
             onChange={handleChange("bio")}
+            onBlur={handleBlur("bio")}
             error={errors.bio}
             disabled={isSubmitting}
-            maxLength={280}
+            maxLength={MAX_BIO_LENGTH}
+            warnAt={240}
             rows={4}
           />
         )}
         <p className="text-xs text-gray-500">
-          {form.bio.length}/280 · Markdown supported
+          {form.bio.trim().length}/{MAX_BIO_LENGTH} · Markdown supported
         </p>
       </div>
 
@@ -281,7 +356,9 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({
               type="button"
               onClick={() => setForm((prev) => ({ ...prev, themeKey: key }))}
               className={`px-3 py-1.5 text-xs font-black uppercase border-2 border-black transition-colors ${
-                form.themeKey === key ? "bg-black text-white" : "bg-white hover:bg-gray-100"
+                form.themeKey === key
+                  ? "bg-black text-white"
+                  : "bg-white hover:bg-gray-100"
               }`}
             >
               {theme.label}
@@ -299,7 +376,9 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({
           onError={handleBannerError}
         />
         {errors.bannerUrl && (
-          <p role="alert" className="text-xs font-bold text-red-600">{errors.bannerUrl}</p>
+          <p role="alert" className="text-xs font-bold text-red-600">
+            {errors.bannerUrl}
+          </p>
         )}
         {form.bannerUrl && (
           <img
@@ -323,7 +402,9 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({
         placeholder="@yourhandle"
         value={form.xHandle}
         onChange={handleChange("xHandle")}
+        onBlur={handleBlur("xHandle")}
         error={errors.xHandle}
+        helperText="Must start with @ and use 4-15 letters, numbers, or underscores."
         disabled={isSubmitting}
       />
 

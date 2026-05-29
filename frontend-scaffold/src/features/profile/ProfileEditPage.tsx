@@ -13,6 +13,7 @@ import { useProfile } from "../../hooks/useProfile";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { categorizeError } from "../../helpers/error";
 import EditProfileForm from "./EditProfileForm";
+import DomainVerificationSection from "./DomainVerificationSection";
 
 const ProfileEditPage: React.FC = () => {
   const navigate = useNavigate();
@@ -23,8 +24,8 @@ const ProfileEditPage: React.FC = () => {
     loading
       ? "Loading Profile..."
       : profile
-      ? `Edit ${profile.displayName}`
-      : "Edit Profile",
+        ? `Edit ${profile.displayName}`
+        : "Edit Profile",
   );
 
   // Redirect to register if no profile exists after loading completes
@@ -65,7 +66,10 @@ const ProfileEditPage: React.FC = () => {
   if (error) {
     return (
       <PageContainer maxWidth="md" className="py-20">
-        <ErrorState category={categorizeError(error).category} onRetry={refetch} />
+        <ErrorState
+          category={categorizeError(error).category}
+          onRetry={refetch}
+        />
       </PageContainer>
     );
   }
@@ -77,11 +81,13 @@ const ProfileEditPage: React.FC = () => {
   return (
     <ErrorBoundary>
       <PageContainer maxWidth="md" className="space-y-6 py-10">
-        <Breadcrumbs items={[
-          { label: 'Home', href: '/' },
-          { label: 'Profile', href: '/profile' },
-          { label: 'Edit Profile' },
-        ]} />
+        <Breadcrumbs
+          items={[
+            { label: "Home", href: "/" },
+            { label: "Profile", href: "/profile" },
+            { label: "Edit Profile" },
+          ]}
+        />
         <div className="flex items-center gap-3">
           <Button
             type="button"
@@ -107,6 +113,8 @@ const ProfileEditPage: React.FC = () => {
             onDirtyChange={setHasUnsavedChanges}
           />
         </Card>
+
+        <DomainVerificationSection profile={profile} onVerified={refetch} />
       </PageContainer>
     </ErrorBoundary>
   );
