@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   ArrowRight,
+  Globe2,
   HeartHandshake,
   MessageSquare,
   Wallet,
@@ -19,7 +20,11 @@ import Textarea from "../../components/ui/Textarea";
 import { useWallet, useContract, useTransactionGuard } from "../../hooks";
 import ErrorState from "../../components/shared/ErrorState";
 import { categorizeError, ERRORS } from "@/helpers/error";
-import { MAX_MESSAGE_LENGTH, canTipAddress, sanitizeStellarAddress } from "@/helpers/validation";
+import {
+  MAX_MESSAGE_LENGTH,
+  canTipAddress,
+  sanitizeStellarAddress,
+} from "@/helpers/validation";
 import { Profile } from "@/types/contract";
 import TipPageSkeleton from "./TipPageSkeleton";
 import TipAmountInput from "./TipAmountInput";
@@ -30,9 +35,11 @@ import { useTipFlow } from "./useTipFlow";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import CreatorNotFound from "./CreatorNotFound";
 import TipAmountPresets from "./TipAmountPresets";
-import TransactionTracker, { TransactionTrackerStatus } from "./TransactionTracker";
+import TransactionTracker, {
+  TransactionTrackerStatus,
+} from "./TransactionTracker";
 import { useFormAutosave } from "@/hooks/useFormAutosave";
-import { logger } from '../../services/logger';
+import { logger } from "../../services/logger";
 
 const TipPage: React.FC = () => {
   const { username } = useParams<{ username: string }>();
@@ -53,7 +60,12 @@ const TipPage: React.FC = () => {
       const profile = await getProfileByUsername(username);
       setCreator(profile);
     } catch (err) {
-      logger.error('features/tipping/TipPage', 'Failed to fetch creator', undefined, err instanceof Error ? err : new Error(String(err)));
+      logger.error(
+        "features/tipping/TipPage",
+        "Failed to fetch creator",
+        undefined,
+        err instanceof Error ? err : new Error(String(err)),
+      );
       setFetchError(String(err));
     } finally {
       setLoading(false);
@@ -61,6 +73,7 @@ const TipPage: React.FC = () => {
   }, [username, getProfileByUsername]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetchCreator performs async contract I/O before state updates settle.
     fetchCreator();
   }, [fetchCreator]);
 
@@ -68,12 +81,14 @@ const TipPage: React.FC = () => {
     title: loading
       ? "Loading..."
       : creator
-      ? `Tip @${creator.username}`
-      : "Creator Not Found",
+        ? `Tip @${creator.username}`
+        : "Creator Not Found",
     description: creator
       ? `Send a tip to ${creator.displayName || creator.username} on Stellar Tipz - decentralized, instant, and fair tipping on Stellar Blockchain`
       : undefined,
-    ogUrl: creator ? `${window.location.origin}/@${creator.username}` : undefined,
+    ogUrl: creator
+      ? `${window.location.origin}/@${creator.username}`
+      : undefined,
   });
 
   const {
@@ -85,9 +100,10 @@ const TipPage: React.FC = () => {
     error: flowError,
     txHash,
   } = useTipFlow(creator?.owner || "");
-  
+
   // Transaction guard to prevent duplicate submissions
-  const { isPending: isTransactionPending, startTransaction } = useTransactionGuard();
+  const { isPending: isTransactionPending, startTransaction } =
+    useTransactionGuard();
 
   const { clearSaved: clearTipDraft } = useFormAutosave({
     storageKey: "tipz_tip_form",
@@ -132,7 +148,7 @@ const TipPage: React.FC = () => {
 
     goToConfirm(amount, message);
   };
-  
+
   // Wrapped confirm handler with transaction guard
   const handleConfirmAndSign = useCallback(async () => {
     await startTransaction(async () => {
@@ -162,11 +178,16 @@ const TipPage: React.FC = () => {
 
   return (
     <PageContainer maxWidth="xl" className="space-y-8 py-10">
-      <Breadcrumbs items={[
-        { label: 'Home', href: '/' },
-        { label: `@${creator.username}` },
-      ]} />
-      <section aria-labelledby="tip-creator-heading" className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+      <Breadcrumbs
+        items={[
+          { label: "Home", href: "/" },
+          { label: `@${creator.username}` },
+        ]}
+      />
+      <section
+        aria-labelledby="tip-creator-heading"
+        className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]"
+      >
         <Card className="space-y-6" padding="lg">
           <div className="flex flex-col gap-5 border-b-2 border-dashed border-black pb-6 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
@@ -180,7 +201,10 @@ const TipPage: React.FC = () => {
                 <p className="text-xs font-black uppercase tracking-[0.25em] text-gray-800 dark:text-gray-200">
                   Tip creator
                 </p>
-                <h1 id="tip-creator-heading" className="text-3xl font-black uppercase">
+                <h1
+                  id="tip-creator-heading"
+                  className="text-3xl font-black uppercase"
+                >
                   {creator.displayName}
                 </h1>
                 <p className="text-sm font-bold text-gray-600">
@@ -188,15 +212,31 @@ const TipPage: React.FC = () => {
                 </p>
                 <VerificationBadge
                   isVerified={creator.verification?.isVerified ?? false}
-                  verificationType={creator.verification?.verificationType as
-                    | "Identity"
-                    | "SocialMedia"
-                    | "Community"
-                    | undefined}
+                  verificationType={
+                    creator.verification?.verificationType as
+                      | "Identity"
+                      | "SocialMedia"
+                      | "Community"
+                      | undefined
+                  }
                   domain={creator.domain}
                   domainVerified={creator.domainVerified}
                   className="mt-2"
                 />
+                {creator.domain && (
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-sm font-bold text-gray-700">
+                    <Globe2 size={16} />
+                    <span>{creator.domain}</span>
+                    {creator.domainVerified && (
+                      <VerificationBadge
+                        isVerified={true}
+                        domain={creator.domain}
+                        domainVerified={true}
+                        className="!px-2 !py-0.5"
+                      />
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -263,7 +303,8 @@ const TipPage: React.FC = () => {
             >
               <p className="text-xl font-black uppercase">Tip queued</p>
               <p className="text-sm font-bold text-gray-700">
-                You are offline. Your tip will be sent when online automatically.
+                You are offline. Your tip will be sent when online
+                automatically.
               </p>
               <button
                 type="button"
@@ -355,10 +396,21 @@ const TipPage: React.FC = () => {
             creator={creator}
             amount={amount}
             message={message}
-            submitting={step === "signing" || step === "submitting" || isTransactionPending}
+            submitting={
+              step === "signing" ||
+              step === "submitting" ||
+              isTransactionPending
+            }
           />
 
-          {["preparing", "signing", "submitting", "confirming", "success", "error"].includes(step) ? (
+          {[
+            "preparing",
+            "signing",
+            "submitting",
+            "confirming",
+            "success",
+            "error",
+          ].includes(step) ? (
             <TransactionTracker
               status={step as TransactionTrackerStatus}
               txHash={txHash ?? undefined}
@@ -370,13 +422,19 @@ const TipPage: React.FC = () => {
                   : undefined
               }
               onRetry={step === "error" ? () => void retry() : undefined}
-              onCancel={step === "preparing" || step === "signing" ? reset : undefined}
+              onCancel={
+                step === "preparing" || step === "signing" ? reset : undefined
+              }
             />
           ) : null}
         </Card>
       </section>
 
-      <section role="region" aria-label="Tipping context and recent activity" className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+      <section
+        role="region"
+        aria-label="Tipping context and recent activity"
+        className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]"
+      >
         <Card className="space-y-4">
           <div className="flex items-center gap-3">
             <MessageSquare size={18} />
