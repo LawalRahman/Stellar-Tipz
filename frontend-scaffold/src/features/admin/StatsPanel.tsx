@@ -21,12 +21,14 @@ export const StatsPanel: React.FC = () => {
   useEffect(() => {
     // In a real implementation, fetch stats from contract
     // For now, using mock data
-    setStats({
-      totalCreators: 1250,
-      totalTipsCount: 8934,
-      totalTipsVolume: 45670000000, // stroops
-      totalFeesCollected: 913400000, // stroops
-      feeBps: 200,
+    queueMicrotask(() => {
+      setStats({
+        totalCreators: 1250,
+        totalTipsCount: 8934,
+        totalTipsVolume: 45670000000, // stroops
+        totalFeesCollected: 913400000, // stroops
+        feeBps: 200,
+      });
     });
   }, []);
 
@@ -99,7 +101,7 @@ export const StatsPanel: React.FC = () => {
           <div>
             <p className="text-sm text-gray-600">Current Fee Rate</p>
             <p className="text-2xl font-bold">{(stats.feeBps / 100).toFixed(2)}%</p>
-            <p className="text-xs text-gray-500 mt-1">{stats.feeBps} basis points</p>
+            <p className="text-xs text-gray-800 dark:text-gray-200 mt-1">{stats.feeBps} basis points</p>
           </div>
           <div>
             <p className="text-sm text-gray-600">Average Fee per Tip</p>

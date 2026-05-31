@@ -1,6 +1,6 @@
 //! Verification system for creator profiles.
 
-use soroban_sdk::{Address, Env, String};
+use soroban_sdk::{Address, Env};
 
 use crate::errors::ContractError;
 use crate::events;
@@ -75,7 +75,7 @@ pub fn approve_verification(
     let now = env.ledger().timestamp();
     profile.verification = VerificationStatus {
         is_verified: true,
-        verification_type: Some(verification_type.clone()),
+        verification_type: verification_type.clone(),
         verified_at: Some(now),
         revoked_at: None,
     };
@@ -115,7 +115,7 @@ pub fn revoke_verification(env: &Env, creator: Address) -> Result<(), ContractEr
     let now = env.ledger().timestamp();
     profile.verification = VerificationStatus {
         is_verified: false,
-        verification_type: None,
+        verification_type: crate::types::VerificationType::Unverified,
         verified_at: None,
         revoked_at: Some(now),
     };
@@ -127,7 +127,10 @@ pub fn revoke_verification(env: &Env, creator: Address) -> Result<(), ContractEr
 }
 
 /// Get verification status for a creator.
-pub fn get_verification_status(env: &Env, creator: Address) -> Result<VerificationStatus, ContractError> {
+pub fn get_verification_status(
+    env: &Env,
+    creator: Address,
+) -> Result<VerificationStatus, ContractError> {
     if !storage::has_profile(env, &creator) {
         return Err(ContractError::NotRegistered);
     }

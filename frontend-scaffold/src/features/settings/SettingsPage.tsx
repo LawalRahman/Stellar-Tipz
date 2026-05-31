@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, Palette, Lock, RotateCcw, Loader } from 'lucide-react';
+import PageContainer from '@/components/layout/PageContainer';
+import { logger } from '../../services/logger';
+import Button from '@/components/ui/Button';
+import {
+  notifyReducedMotionSettingsChanged,
+  ReduceMotionPreference,
+} from '@/hooks/useReducedMotion';
+import { startOnboardingTour } from '@/hooks/useOnboarding';
 
 interface Settings {
   tipNotifications: boolean;
@@ -10,6 +18,7 @@ interface Settings {
   currency: 'USD' | 'EUR' | 'XLM';
   publicProfile: boolean;
   showOnLeaderboard: boolean;
+  reduceMotion: ReduceMotionPreference;
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -21,6 +30,7 @@ const DEFAULT_SETTINGS: Settings = {
   currency: 'USD',
   publicProfile: true,
   showOnLeaderboard: true,
+  reduceMotion: 'auto',
 };
 
 export const SettingsPage: React.FC = () => {
@@ -35,7 +45,7 @@ export const SettingsPage: React.FC = () => {
       try {
         setSettings(JSON.parse(saved));
       } catch (e) {
-        console.error('Failed to load settings:', e);
+        logger.error('features/settings/SettingsPage', 'Failed to load settings', undefined, e instanceof Error ? e : new Error(String(e)));
       }
     }
   }, []);
@@ -44,6 +54,7 @@ export const SettingsPage: React.FC = () => {
     setIsSaving(true);
     try {
       localStorage.setItem('tipz_settings', JSON.stringify(settings));
+      notifyReducedMotionSettingsChanged();
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } finally {
@@ -55,6 +66,7 @@ export const SettingsPage: React.FC = () => {
     if (window.confirm('Are you sure you want to reset all settings to defaults?')) {
       setSettings(DEFAULT_SETTINGS);
       localStorage.removeItem('tipz_settings');
+      notifyReducedMotionSettingsChanged();
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     }
@@ -67,7 +79,7 @@ export const SettingsPage: React.FC = () => {
     }));
   };
 
-  const handleChange = (key: keyof Settings, value: any) => {
+  const handleChange = <K extends keyof Settings>(key: K, value: Settings[K]) => {
     setSettings((prev) => ({
       ...prev,
       [key]: value,
@@ -75,22 +87,22 @@ export const SettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-2xl mx-auto px-4">
+    <PageContainer maxWidth="md" ariaLabel="Settings content" className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Settings</h1>
 
         {saveSuccess && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div role="status" aria-live="polite" className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
             <p className="text-sm text-green-700">Settings saved successfully</p>
           </div>
         )}
 
         {/* Notifications Section */}
-        <div className="bg-white rounded-lg shadow mb-6">
+        <section role="region" aria-labelledby="notifications-heading" className="bg-white rounded-lg shadow mb-6">
           <div className="p-6 border-b">
             <div className="flex items-center gap-3 mb-4">
               <Bell className="w-5 h-5 text-blue-600" />
-              <h2 className="text-xl font-semibold">Notifications</h2>
+              <h2 id="notifications-heading" className="text-xl font-semibold">Notifications</h2>
             </div>
             <p className="text-sm text-gray-600">Manage your notification preferences</p>
           </div>
@@ -124,14 +136,14 @@ export const SettingsPage: React.FC = () => {
               />
             </label>
           </div>
-        </div>
+        </section>
 
         {/* Display Section */}
-        <div className="bg-white rounded-lg shadow mb-6">
+        <section role="region" aria-labelledby="display-heading" className="bg-white rounded-lg shadow mb-6">
           <div className="p-6 border-b">
             <div className="flex items-center gap-3 mb-4">
               <Palette className="w-5 h-5 text-purple-600" />
-              <h2 className="text-xl font-semibold">Display</h2>
+              <h2 id="display-heading" className="text-xl font-semibold">Display</h2>
             </div>
             <p className="text-sm text-gray-600">Customize your display preferences</p>
           </div>
@@ -176,14 +188,76 @@ export const SettingsPage: React.FC = () => {
               </select>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Privacy Section */}
+        {/* Motion Section */}
         <div className="bg-white rounded-lg shadow mb-6">
           <div className="p-6 border-b">
             <div className="flex items-center gap-3 mb-4">
+              <RotateCcw className="w-5 h-5 text-teal-600" />
+              <h2 className="text-xl font-semibold">Motion</h2>
+            </div>
+            <p className="text-sm text-gray-600">
+              Respect your motion preferences for page transitions and animations.
+            </p>
+          </div>
+
+          <div className="p-6 space-y-3">
+            <label className="flex items-center justify-between gap-3 border-2 border-black px-3 py-2">
+              <span className="text-sm font-medium">Use device motion preference</span>
+              <input
+                type="radio"
+                name="reduceMotion"
+                value="auto"
+                checked={settings.reduceMotion === 'auto'}
+                onChange={() => handleChange('reduceMotion', 'auto')}
+                className="h-4 w-4 border-2 border-black accent-black"
+              />
+            </label>
+            <label className="flex items-center justify-between gap-3 border-2 border-black px-3 py-2">
+              <span className="text-sm font-medium">Always reduce motion</span>
+              <input
+                type="radio"
+                name="reduceMotion"
+                value="always"
+                checked={settings.reduceMotion === 'always'}
+                onChange={() => handleChange('reduceMotion', 'always')}
+                className="h-4 w-4 border-2 border-black accent-black"
+              />
+            </label>
+          </div>
+        </div>
+
+        {/* Onboarding Section */}
+        <div className="bg-white rounded-lg shadow mb-6">
+          <div className="p-6 border-b">
+            <div className="flex items-center gap-3 mb-4">
+              <Palette className="w-5 h-5 text-teal-600" />
+              <h2 className="text-xl font-semibold">Onboarding</h2>
+            </div>
+            <p className="text-sm text-gray-600">
+              Replay the guided tour anytime from your settings.
+            </p>
+          </div>
+
+          <div className="p-6">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => startOnboardingTour()}
+            >
+              Replay onboarding tour
+            </Button>
+          </div>
+        </div>
+
+        {/* Privacy Section */}
+        <section role="region" aria-labelledby="privacy-heading" className="bg-white rounded-lg shadow mb-6">
+          <div className="p-6 border-b">
+            <div className="flex items-center gap-3 mb-4">
               <Lock className="w-5 h-5 text-green-600" />
-              <h2 className="text-xl font-semibold">Privacy</h2>
+              <h2 id="privacy-heading" className="text-xl font-semibold">Privacy</h2>
             </div>
             <p className="text-sm text-gray-600">Control your profile visibility</p>
           </div>
@@ -208,7 +282,7 @@ export const SettingsPage: React.FC = () => {
               />
             </label>
           </div>
-        </div>
+        </section>
 
         {/* Action Buttons */}
         <div className="flex gap-3">
@@ -236,7 +310,7 @@ export const SettingsPage: React.FC = () => {
           </button>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 };
 

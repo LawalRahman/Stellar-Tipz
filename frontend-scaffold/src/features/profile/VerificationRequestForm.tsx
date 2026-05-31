@@ -62,7 +62,12 @@ export const VerificationRequestForm: React.FC<VerificationRequestFormProps> = (
               name="verificationType"
               value={type.id}
               checked={selectedType === type.id}
-              onChange={(e) => setSelectedType(e.target.value as any)}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === 'Identity' || val === 'SocialMedia' || val === 'Community') {
+                  setSelectedType(val);
+                }
+              }}
               className="mt-1"
             />
             <div className="flex-1">
@@ -74,7 +79,12 @@ export const VerificationRequestForm: React.FC<VerificationRequestFormProps> = (
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-red-50 rounded-lg">
+        <div
+          className="flex items-center gap-2 p-3 bg-red-50 rounded-lg"
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
+        >
           <AlertCircle className="w-4 h-4 text-red-600" />
           <p className="text-sm text-red-600">{error}</p>
         </div>

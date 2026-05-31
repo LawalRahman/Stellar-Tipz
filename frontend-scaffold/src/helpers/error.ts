@@ -9,6 +9,16 @@ export const ERRORS = {
   CONTRACT: "Something went wrong. Please try again.",
   NOT_FOUND: "The requested content could not be found.",
   WALLET: "Wallet action failed. Please check your wallet and try again.",
+  WALLET_NOT_INSTALLED:
+    "Freighter extension not found. Please install Freighter to connect your wallet.",
+  WALLET_LOCKED:
+    "Freighter is locked. Please unlock your wallet and try again.",
+  WALLET_REJECTED:
+    "Connection was rejected. Please approve the connection request in your wallet.",
+  WALLET_NETWORK_MISMATCH:
+    "Network mismatch detected. Please switch your wallet to the correct network.",
+  WALLET_TIMEOUT:
+    "Connection timed out. Please try again and approve the connection in your wallet.",
 };
 
 export type ErrorCategory =
@@ -18,43 +28,76 @@ export type ErrorCategory =
   | "not-found"
   | "validation"
   | "timeout"
+  | "rate-limited"
   | "unknown";
 
-export interface CategorizedError {
-  category: ErrorCategory;
-  message: string;
-  retryable: boolean;
-}
+export type WalletErrorType =
+  | "not-installed"
+  | "locked"
+  | "rejected"
+  | "network-mismatch"
+  | "timeout"
+  | "unknown";
 
-/** Maps Soroban contract error codes to human-readable messages. */
-const CONTRACT_ERROR_CODES: Record<number, string> = {
-  1: "Contract not initialized.",
-  2: "Profile already registered.",
-  3: "Username is already taken.",
-  4: "Profile not found.",
-  5: "Invalid username format.",
-  6: "Invalid display name.",
-  7: "Invalid image URL.",
-  8: "Insufficient balance.",
-  9: "Invalid tip amount.",
-  10: "Cannot tip yourself.",
-  11: "Message is too long (max 280 characters).",
-  12: "Contract is paused.",
-  13: "Unauthorized — admin only.",
-  14: "Tip amount is below the minimum.",
-  15: "Balance is not zero.",
+export const classifyWalletError = (
+  error: unknown,
+): { type: WalletErrorType; message: string } => {
+  if (!error) return { type: "unknown", message: ERRORS.WALLET };
+
+  const errorString = String(error).toLowerCase();
+
+  if (
+    errorString.includes("not installed") ||
+    errorString.includes("extension not found") ||
+    errorString.includes("freighter not available") ||
+    errorString.includes("please install")
+  ) {
+    return { type: "not-installed", message: ERRORS.WALLET_NOT_INSTALLED };
+  }
+
+  if (
+    errorString.includes("locked") ||
+    errorString.includes("unlock")
+  ) {
+    return { type: "locked", message: ERRORS.WALLET_LOCKED };
+  }
+
+  if (
+    errorString.includes("rejected") ||
+    errorString.includes("cancelled") ||
+    errorString.includes("canceled") ||
+    errorString.includes("user declined") ||
+    errorString.includes("user denied") ||
+    errorString.includes("connection declined")
+  ) {
+    return { type: "rejected", message: ERRORS.WALLET_REJECTED };
+  }
+
+  if (
+    errorString.includes("network") &&
+    (errorString.includes("mismatch") ||
+      errorString.includes("switch") ||
+      errorString.includes("unsupported network"))
+  ) {
+    return {
+      type: "network-mismatch",
+      message: ERRORS.WALLET_NETWORK_MISMATCH,
+    };
+  }
+
+  if (
+    errorString.includes("timeout") ||
+    errorString.includes("timed out") ||
+    errorString.includes("popup closed")
+  ) {
+    return { type: "timeout", message: ERRORS.WALLET_TIMEOUT };
+  }
+
+  return { type: "unknown", message: ERRORS.WALLET };
 };
 
-/** Extract Soroban error code from message like "Error(Contract, #8)" */
-function extractContractErrorCode(msg: string): number | null {
-  const match = msg.match(/Error\(Contract,\s*#(\d+)\)/i);
-  return match ? parseInt(match[1], 10) : null;
-}
-
-export const categorizeError = (error: unknown): CategorizedError => {
-  if (!error) {
-    return { category: "unknown", message: "An unexpected error occurred.", retryable: true };
-  }
+export const categorizeError = (error: unknown): ErrorCategory => {
+  if (!error) return "unknown";
 
   const errorString = String(error).toLowerCase();
   const rawMessage = error instanceof Error ? error.message : String(error);
@@ -140,6 +183,21 @@ export const categorizeError = (error: unknown): CategorizedError => {
       category: "validation",
       message: "Please check your input and try again.",
       retryable: false,
+    };
+  }
+
+  // Rate limited
+  if (
+    errorString.includes("rate limit") ||
+    errorString.includes("rate_limit") ||
+    errorString.includes("too many requests") ||
+    errorString.includes("429") ||
+    errorString.includes("rate-limited")
+  ) {
+    return {
+      category: "rate-limited",
+      message: ERRORS.RATE_LIMITED,
+      retryable: true,
     };
   }
 

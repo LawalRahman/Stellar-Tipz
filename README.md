@@ -6,6 +6,7 @@
 [![Stellar](https://img.shields.io/badge/Stellar-Testnet-09B3AF?style=flat-square&logo=stellar)](https://stellar.org)
 [![Soroban](https://img.shields.io/badge/Soroban-Smart%20Contracts-blueviolet?style=flat-square)](https://soroban.stellar.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![codecov](https://codecov.io/gh/Akanimoh12/Stellar-Tipz/branch/main/graph/badge.svg)](https://codecov.io/gh/Akanimoh12/Stellar-Tipz)
 
 ---
 
@@ -63,22 +64,22 @@ Tipz delivers:
 
 ## 🏆 Credit Score System
 
-Our unique credit score algorithm provides transparent creator credibility:
+Our unique credit score algorithm provides transparent creator credibility. For complete documentation including the formula, weights, examples, and update mechanisms, see [docs/CREDIT_SCORE.md](docs/CREDIT_SCORE.md).
 
-```
-Credit Score = (Followers/10 × 50%) + ((Posts + Replies×1.5)/5 × 30%) + (Base 200 × 20%)
-
-Maximum: 1000 points
-```
+**Quick Overview:**
+- Score range: **0–100**
+- Base score: **40** (all new creators start at Silver tier)
+- Components: Tip volume (20%), X metrics (30%), Account age (10%), Streak bonus (uncapped)
+- Maximum score: **100** (Diamond tier)
 
 ### Scoring Tiers
 
 | Tier | Score Range | Badge | Description |
 |------|-------------|-------|-------------|
-| 🥉 **Bronze** | 0-400 | Entry Level | New or small creators |
-| 🥈 **Silver** | 401-700 | Established | Growing presence |
-| 🥇 **Gold** | 701-900 | Proven | Strong community |
-| 💎 **Diamond** | 901-1000 | Elite | Top-tier creators |
+| 🥉 **Bronze** | 20-39 | Entry Level | Below base (not achievable via normal registration) |
+| 🥈 **Silver** | 40-59 | Established | Default for all newly registered creators |
+| 🥇 **Gold** | 60-79 | Proven | Growing tips, X presence, or account age |
+| 💎 **Diamond** | 80-100 | Elite | Strong across all components |
 
 **Why Credit Scores Matter:**
 - Helps tippers discover quality creators
@@ -306,9 +307,12 @@ Node.js 18+
 Rust & Cargo
 Soroban CLI
 Freighter Wallet extension
+Docker & Docker Compose (optional, for containerized dev)
 ```
 
 ### Installation
+
+#### Option A: Local development
 ```bash
 # Clone repository
 git clone https://github.com/yourusername/stellar-tipz.git
@@ -319,6 +323,24 @@ npm install
 
 # Start development server
 npm run dev
+```
+
+#### Option B: Docker development environment
+```bash
+# Build and start all services
+docker compose --profile dev up -d
+
+# Frontend is available at http://localhost:3000
+# Contract changes auto-reload via cargo watch
+
+# View logs
+docker compose logs -f
+
+# Run contract tests inside container
+docker compose exec contract cargo test
+
+# Stop all services
+docker compose down
 ```
 
 ### Deploy Contract (Testnet)
@@ -443,3 +465,7 @@ Built with ❤️ for the Scaffold Stellar Hackathon
 ⚡ **Powered by Stellar** | � **Built with Soroban** | 🛠️ **Made with Scaffold Stellar**
 
 </div>
+
+## Troubleshooting
+
+For common errors and their solutions, see [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).

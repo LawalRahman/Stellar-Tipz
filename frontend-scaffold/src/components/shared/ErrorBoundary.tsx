@@ -1,6 +1,8 @@
 import React from 'react';
 import ErrorState from './ErrorState';
 import { categorizeError } from '@/helpers/error';
+import { logger } from '../../services/logger';
+import { captureError } from '@/services/sentry';
 
 interface ErrorBoundaryProps {
   fallback?: React.ReactNode;
@@ -11,6 +13,7 @@ interface ErrorBoundaryProps {
 interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
+  errorInfo: React.ErrorInfo | null;
 }
 
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
@@ -19,27 +22,53 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     this.state = {
       hasError: false,
       error: null,
+      errorInfo: null,
     };
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    return { hasError: true, error };
+    return { hasError: true, error, errorInfo: null };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    this.setState({ errorInfo });
+    
+    // Log error with component stack to logger service (#733)
+    import('@/services/logger').then(({ logger }) => {
+      logger.error('React Error Boundary caught error', {
+        error: error.message,
+        stack: error.stack,
+        componentStack: errorInfo.componentStack,
+        timestamp: new Date().toISOString(),
+      });
+    });
+    
     if (import.meta.env.DEV) {
       console.error('ErrorBoundary caught an error:', error);
       console.error('Error info:', errorInfo);
     }
+    
+    // Future: Send to analytics service
+    this.reportError(error, errorInfo);
   }
 
   handleReset = () => {
-    this.setState({ hasError: false, error: null });
+    this.setState({ hasError: false, error: null, errorInfo: null });
     if (this.props.onReset) {
       this.props.onReset();
     } else {
       window.location.reload();
     }
+  };
+
+  reportError = (error: Error, errorInfo: React.ErrorInfo) => {
+    captureError(error);
+    logger.debug('components/shared/ErrorBoundary', 'Error reporting hook', {
+      error: error.message,
+      stack: error.stack,
+      componentStack: errorInfo.componentStack,
+      timestamp: new Date().toISOString(),
+    });
   };
 
   render() {
@@ -55,6 +84,8 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
           <ErrorState 
             category={category} 
             onRetry={this.handleReset}
+            error={this.state.error}
+            errorInfo={this.state.errorInfo}
           />
         </div>
       );

@@ -3,8 +3,25 @@ import ReactDOM from "react-dom/client";
 
 import App from "./App";
 import { I18nProvider } from "./i18n";
+import { logger } from "./services/logger";
+import { validateEnv } from "./helpers/env";
+import { initSentry } from "./services/sentry";
 
 import "./index.scss";
+
+try {
+  validateEnv();
+} catch (err) {
+  const msg = err instanceof Error ? err.message : String(err);
+  logger.error("startup", "Environment validation failed", { error: msg });
+  const root = document.getElementById("root");
+  if (root) {
+    root.innerHTML = `<pre style="color:red;font-family:monospace;padding:1rem">Environment error: ${msg}\n\nSet the required variables in your .env file and restart.</pre>`;
+  }
+  throw err;
+}
+
+initSentry();
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -22,8 +39,8 @@ function InstallPromptBanner() {
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setVisible(true);
     };
-    window.addEventListener("beforeinstallprompt", handler as any);
-    return () => window.removeEventListener("beforeinstallprompt", handler as any);
+    window.addEventListener("beforeinstallprompt", handler as EventListener);
+    return () => window.removeEventListener("beforeinstallprompt", handler as EventListener);
   }, []);
 
   if (!visible) return null;
@@ -31,6 +48,7 @@ function InstallPromptBanner() {
   return (
     <div
       role="status"
+      aria-live="polite"
       aria-busy="false"
       className="fixed bottom-4 left-1/2 z-[9999] w-[min(560px,calc(100%-2rem))] -translate-x-1/2 border-4 border-black bg-white p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
     >
@@ -47,8 +65,17 @@ function InstallPromptBanner() {
             className="border-2 border-black bg-black px-4 py-2 text-xs font-black uppercase tracking-wide text-white"
             onClick={async () => {
               if (!deferredPrompt) return;
-              await deferredPrompt.prompt();
-              await deferredPrompt.userChoice.catch(() => null);
+              try {
+                await deferredPrompt.prompt();
+                await deferredPrompt.userChoice;
+              } catch (err) {
+                logger.warn(
+                  'index',
+                  'Install prompt dismissed or failed',
+                  undefined,
+                  err instanceof Error ? err : new Error(String(err)),
+                );
+              }
               setVisible(false);
               setDeferredPrompt(null);
             }}
@@ -70,7 +97,13 @@ function InstallPromptBanner() {
 
 function OfflineScreen() {
   return (
-    <div className="min-h-screen bg-off-white p-6" role="status" aria-busy="true">
+    <div
+      className="min-h-screen bg-off-white p-6"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+      aria-atomic="true"
+    >
       <div className="mx-auto max-w-2xl border-4 border-black bg-white p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
         <h1 className="text-3xl font-black uppercase">Offline</h1>
         <p className="mt-3 text-sm font-bold text-gray-700">
@@ -105,33 +138,16 @@ function Root() {
   );
 }
 
-async function registerServiceWorker() {
-  if (!("serviceWorker" in navigator)) return;
+import { register as registerSW } from "./services/serviceWorker";
 
-  try {
-    const swUrl = new URL("./sw.ts", import.meta.url);
-    const reg = await navigator.serviceWorker.register(swUrl, { type: "module" });
-
-    // Trigger immediate update checks on load (helps “update on deployment”)
-    reg.update().catch(() => null);
-
-    // If there's already a waiting worker, ask it to activate by reloading once controlled.
-    if (reg.waiting && navigator.serviceWorker.controller) {
-      // Next navigation will be controlled by the updated SW.
-    }
-  } catch (err) {
-    // SW registration should never break app boot
-    console.warn("[PWA] Service worker registration failed:", err);
-  }
-}
-
-registerServiceWorker();
+// Register the service worker (public/sw.js). Update detection and
+// "update available" UI are handled inside App via onUpdateAvailable().
+registerSW();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <Root />
     <I18nProvider>
-      <App />
+      <Root />
     </I18nProvider>
   </React.StrictMode>,
 );

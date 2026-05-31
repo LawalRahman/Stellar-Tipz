@@ -1,4 +1,5 @@
 import { useMemo, useEffect, useRef } from "react";
+import { logger } from '../services/logger';
 import {
   StellarWalletsKit,
   WalletNetwork,
@@ -9,6 +10,7 @@ import {
 } from "@creit.tech/stellar-wallets-kit";
 import { signTx } from "../helpers/network";
 import { useWalletStore } from "../store/walletStore";
+import { classifyWalletError } from "../helpers/error";
 
 interface Freighter {
   getNetwork: () => Promise<string>;
@@ -32,20 +34,20 @@ const disposeKit = (kit: StellarWalletsKit | null) => {
   try {
     disposableKit.closeModal?.();
   } catch (error) {
-    console.warn("Failed to close wallet modal during cleanup:", error);
+    logger.warn('hooks/useWallet', 'Failed to close wallet modal during cleanup', undefined, error instanceof Error ? error : new Error(String(error)));
   }
 
   try {
     void disposableKit.disconnect?.();
   } catch (error) {
-    console.warn("Failed to disconnect wallet kit during cleanup:", error);
+    logger.warn('hooks/useWallet', 'Failed to disconnect wallet kit during cleanup', undefined, error instanceof Error ? error : new Error(String(error)));
   }
 
   try {
     disposableKit.removeAllListeners?.();
     disposableKit.destroy?.();
   } catch (error) {
-    console.warn("Failed to fully dispose wallet kit during cleanup:", error);
+    logger.warn('hooks/useWallet', 'Failed to fully dispose wallet kit during cleanup', undefined, error instanceof Error ? error : new Error(String(error)));
   }
 };
 
@@ -104,19 +106,26 @@ const isWalletInstalled = (id: string): boolean => {
 
 export const useWallet = () => {
   const {
+    wallets,
+    activeWalletKey,
     publicKey,
     connected,
     connecting,
     isReconnecting,
     error,
+    walletError,
     network,
     walletType,
     signingStatus,
+    _hasHydrated,
     connect,
     disconnect,
+    removeWallet,
+    setActiveWallet,
     setConnecting,
     setReconnecting,
     setError,
+    setWalletError,
     setNetwork: storeSetNetwork,
     setSigningStatus,
   } = useWalletStore();
@@ -125,10 +134,11 @@ export const useWallet = () => {
     network === "PUBLIC" ? WalletNetwork.PUBLIC : WalletNetwork.TESTNET;
   const kit = useMemo(() => getKit(kitNetwork), [kitNetwork]);
 
-  // Auto-reconnect on mount if a previous session exists
+  // Auto-reconnect on mount: try to re-establish the active wallet session.
+  // If unavailable, remove it from the list but keep the rest.
   const hasAttemptedReconnect = useRef(false);
   useEffect(() => {
-    if (hasAttemptedReconnect.current) return;
+    if (hasAttemptedReconnect.current || !_hasHydrated) return;
     hasAttemptedReconnect.current = true;
 
     if (!walletType || connected) return;
@@ -136,7 +146,7 @@ export const useWallet = () => {
     let cancelled = false;
     const timeoutId = setTimeout(() => {
       if (!cancelled) {
-        console.warn("Auto-reconnect timed out");
+        logger.warn('hooks/useWallet', 'Auto-reconnect timed out');
         setReconnecting(false);
         disconnect();
       }
@@ -152,10 +162,7 @@ export const useWallet = () => {
           connect(address, walletType);
         }
       } catch (err) {
-        console.warn(
-          "Auto-reconnect failed — wallet extension may be unavailable:",
-          err,
-        );
+        logger.warn('hooks/useWallet', 'Auto-reconnect failed — wallet extension may be unavailable', undefined, err instanceof Error ? err : new Error(String(err)));
         if (!cancelled) {
           // Clear persisted state so we don't retry on next load
           disconnect();
@@ -172,18 +179,58 @@ export const useWallet = () => {
       cancelled = true;
       clearTimeout(timeoutId);
     };
-    // Only run on mount
+    // Only run when hydrated
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_hasHydrated]);
+
+  const connectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (connectTimeoutRef.current) {
+        clearTimeout(connectTimeoutRef.current);
+      }
+    };
   }, []);
 
   const actions = useMemo(
     () => ({
+      /** Open the wallet selection modal and add / activate the chosen wallet. */
       connect: async () => {
         setConnecting(true);
         setError(null);
+        setWalletError(null);
+
+        let walletSelected = false;
+
+        const startTimeout = () => {
+          connectTimeoutRef.current = setTimeout(() => {
+            if (!walletSelected) {
+              // connection timed out
+              const classified = classifyWalletError(
+                new Error("Connection timed out"),
+              );
+              logger.error('hooks/useWallet', '[Wallet] Connection timed out after 60s');
+              setWalletError(classified);
+              setError(classified.message);
+              setConnecting(false);
+            }
+          }, 60000);
+        };
+
+        const clearTimeout_ = () => {
+          if (connectTimeoutRef.current) {
+            clearTimeout(connectTimeoutRef.current);
+            connectTimeoutRef.current = null;
+          }
+        };
+
+        startTimeout();
         try {
           await kit.openModal({
             onWalletSelected: async (option) => {
+              walletSelected = true;
+              clearTimeout_();
               try {
                 kit.setWallet(option.id);
                 const { address } = await kit.getAddress();
@@ -203,27 +250,51 @@ export const useWallet = () => {
                     }
                   }
                 } catch (e) {
-                  console.warn("Network auto-detection failed:", e);
+                  logger.warn('hooks/useWallet', '[Wallet] Network auto-detection failed', undefined, e instanceof Error ? e : new Error(String(e)));
                 }
 
+                // connect() adds to the list and makes it active
                 connect(address, option.id);
               } catch (err) {
-                console.error("Wallet connection failed:", err);
-                setError(
-                  err instanceof Error
-                    ? err.message
-                    : "Failed to connect wallet",
-                );
+                logger.error('hooks/useWallet', '[Wallet] Wallet connection failed', undefined, err instanceof Error ? err : new Error(String(err)));
+                const classified = classifyWalletError(err);
+                setWalletError(classified);
+                setError(classified.message);
               }
             },
           });
-        } catch {
+          clearTimeout_();
+          if (!walletSelected) {
+            const timeoutErr = new Error("Connection popup closed without wallet selection");
+            logger.warn('hooks/useWallet', '[Wallet] Popup closed without wallet selection');
+            const classified = classifyWalletError(timeoutErr);
+            setWalletError(classified);
+            setError(classified.message);
+            setConnecting(false);
+          }
+        } catch (err) {
+          clearTimeout_();
+          logger.error('hooks/useWallet', '[Wallet] Wallet connection error', { type: 'openModal', timestamp: new Date().toISOString() }, err instanceof Error ? err : new Error(String(err)));
+          const classified = classifyWalletError(err);
+          setWalletError(classified);
+          setError(classified.message);
           setConnecting(false);
         }
       },
 
+      /** Disconnect all wallets. */
       disconnect: () => {
         disconnect();
+      },
+
+      /** Remove a specific wallet from the list by public key. */
+      removeWallet: (key: string) => {
+        removeWallet(key);
+      },
+
+      /** Switch the active (default) wallet for signing transactions. */
+      setActiveWallet: (key: string) => {
+        setActiveWallet(key);
       },
 
       setNetwork: (newNetwork: "TESTNET" | "PUBLIC") => {
@@ -250,13 +321,13 @@ export const useWallet = () => {
                 storeSetNetwork(detectedNetwork);
               }
             } catch (e) {
-              console.warn("Network auto-detection failed:", e);
+              logger.warn('hooks/useWallet', 'Network auto-detection failed', undefined, e instanceof Error ? e : new Error(String(e)));
             }
           }
 
           connect(address, walletId);
         } catch (err) {
-          console.error("Wallet connection failed:", err);
+          logger.error('hooks/useWallet', 'Wallet connection failed', undefined, err instanceof Error ? err : new Error(String(err)));
           setError(
             err instanceof Error ? err.message : "Failed to connect wallet",
           );
@@ -297,8 +368,11 @@ export const useWallet = () => {
       publicKey,
       connect,
       disconnect,
+      removeWallet,
+      setActiveWallet,
       setConnecting,
       setError,
+      setWalletError,
       storeSetNetwork,
       setSigningStatus,
       kit,
@@ -308,25 +382,35 @@ export const useWallet = () => {
 
   return useMemo(
     () => ({
+      /** All currently connected wallets. */
+      wallets,
+      /** Public key of the active wallet. */
+      activeWalletKey,
       publicKey,
       connected,
       connecting,
       isReconnecting,
       error,
+      walletError,
       network,
       walletType,
       signingStatus,
+      setError,
       ...actions,
     }),
     [
+      wallets,
+      activeWalletKey,
       publicKey,
       connected,
       connecting,
       isReconnecting,
       error,
+      walletError,
       network,
       walletType,
       signingStatus,
+      setError,
       actions,
     ],
   );

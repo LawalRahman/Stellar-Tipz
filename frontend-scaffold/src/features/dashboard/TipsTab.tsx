@@ -8,6 +8,7 @@ import { useWalletStore } from "../../store/walletStore";
 import Loader from "../../components/ui/Loader";
 import Pagination from "../../components/ui/Pagination";
 import { stroopToXlm } from "../../helpers/format";
+import ExportButton from "./ExportButton";
 
 const PAGE_SIZE = 20;
 
@@ -64,7 +65,9 @@ const TipsTab: React.FC = () => {
     date: formatTimestamp(tip.timestamp),
     tipper: truncateAddress(tip.tipper),
     amount: `${stroopToXlm(tip.amount, 7)} XLM`,
-    message: tip.message || "—",
+    message: tip.isEncrypted && tip.message
+      ? <span><span className="text-amber-600 mr-1">🔒</span>Encrypted</span>
+      : (tip.message || "—"),
   }));
 
   const columns = [
@@ -90,12 +93,13 @@ const TipsTab: React.FC = () => {
     );
   }
 
-  return (
-    <div className="space-y-5">
-      {/* Filter row */}
+   return (
+     <div className="space-y-5">
+       <ExportButton />
+       {/* Filter row */}
       <div className="flex flex-wrap items-end gap-4">
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-black uppercase tracking-[0.2em] text-gray-500">
+          <label className="text-xs font-black uppercase tracking-[0.2em] text-gray-800 dark:text-gray-200">
             From date
           </label>
           <input
@@ -109,7 +113,7 @@ const TipsTab: React.FC = () => {
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-black uppercase tracking-[0.2em] text-gray-500">
+          <label className="text-xs font-black uppercase tracking-[0.2em] text-gray-800 dark:text-gray-200">
             To date
           </label>
           <input

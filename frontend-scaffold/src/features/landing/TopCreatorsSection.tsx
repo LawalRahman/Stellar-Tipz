@@ -5,11 +5,13 @@ import { useNavigate } from "react-router-dom";
 import { useContract } from "@/hooks";
 import { LeaderboardEntry } from "@/types/contract";
 import ProfileCard from "@/components/shared/ProfileCard";
-import Skeleton from "@/components/ui/Skeleton";
+import ProfileCardSkeleton from "@/components/shared/ProfileCardSkeleton";
 import EmptyState from "@/components/ui/EmptyState";
 import ErrorState from "@/components/shared/ErrorState";
 import { categorizeError } from "@/helpers/error";
 import { env } from "@/helpers/env";
+import { logger } from "../../services/logger";
+import { mockLeaderboard } from "@/features/mockData";
 
 export default function TopCreatorsSection() {
   const [creators, setCreators] = useState<LeaderboardEntry[]>([]);
@@ -35,7 +37,7 @@ export default function TopCreatorsSection() {
       const data = await getLeaderboard(5);
       setCreators(data);
     } catch (err) {
-      console.error('Failed to fetch leaderboard:', err);
+      logger.error('features/landing/TopCreatorsSection', 'Failed to fetch leaderboard', undefined, err instanceof Error ? err : new Error(String(err)));
       setError(String(err));
     } finally {
       setLoading(false);
@@ -43,33 +45,8 @@ export default function TopCreatorsSection() {
   }, [getLeaderboard]);
 
   useEffect(() => {
-    if (
-      !env.contractId &&
-      !env.useMockData &&
-      import.meta.env.MODE !== "test"
-    ) {
-      return;
-    }
-
-    let active = true;
-    getLeaderboard(5)
-      .then((data) => {
-        if (active) {
-          setCreators(data);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (active) {
-          console.error("Failed to fetch leaderboard:", err);
-          setError(String(err));
-          setLoading(false);
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, [getLeaderboard]);
+    void fetchCreators();
+  }, [fetchCreators]);
 
   const handleRetry = useCallback(() => {
     if (
@@ -91,7 +68,7 @@ export default function TopCreatorsSection() {
         setLoading(false);
       })
       .catch((err) => {
-        console.error("Failed to fetch leaderboard:", err);
+        logger.error('features/landing/TopCreatorsSection', 'Failed to fetch leaderboard', undefined, err instanceof Error ? err : new Error(String(err)));
         setError(String(err));
         setLoading(false);
       });
@@ -102,7 +79,11 @@ export default function TopCreatorsSection() {
   };
 
   return (
-    <section className="py-24 px-6 bg-off-white overflow-hidden">
+    <section
+      role="region"
+      aria-labelledby="top-creators-heading"
+      className="py-24 px-6 bg-off-white overflow-hidden"
+    >
       <div className="max-w-7xl mx-auto space-y-12">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-4">
@@ -110,7 +91,10 @@ export default function TopCreatorsSection() {
               <Trophy size={14} />
               Leaderboard
             </div>
-            <h2 className="text-4xl md:text-5xl font-black uppercase leading-none">
+            <h2
+              id="top-creators-heading"
+              className="text-4xl md:text-5xl font-black uppercase leading-none"
+            >
               Top Creators
             </h2>
             <p className="text-lg font-bold text-gray-600 max-w-xl">
@@ -137,7 +121,11 @@ export default function TopCreatorsSection() {
             ))}
           </div>
         ) : error ? (
-          <ErrorState category={categorizeError(error)} onRetry={handleRetry} />
+          <ErrorState
+            category={categorizeError(error).category}
+            message={categorizeError(error).message}
+            onRetry={handleRetry}
+          />
         ) : creators.length === 0 ? (
           <div className="border-3 border-black bg-white">
             <EmptyState
@@ -169,6 +157,7 @@ export default function TopCreatorsSection() {
                   totalTips={creator.totalTipsReceived}
                   creditScore={creator.creditScore}
                   onTip={() => navigate(`/@${creator.username}`)}
+                  dataTourId={index === 0 ? 'tour-send-tip' : undefined}
                 />
               </motion.div>
             ))}

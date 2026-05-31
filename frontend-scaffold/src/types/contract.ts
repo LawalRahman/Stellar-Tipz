@@ -19,6 +19,16 @@ export interface RawProfile {
   balance: string;
   registered_at: number;
   updated_at: number;
+  verification?: {
+    is_verified: boolean;
+    verification_type?: string;
+    verified_at?: number;
+    revoked_at?: number;
+  };
+  domain?: string;
+  domain_verified?: boolean;
+  domain_verified_at?: number;
+  custom_min_tip?: string;
 }
 
 /** Raw tip record as returned by the contract before key mapping. */
@@ -29,6 +39,7 @@ export interface RawTip {
   amount: string;
   message: string;
   timestamp: number;
+  is_encrypted?: boolean;
 }
 
 /** Raw leaderboard entry before key mapping. */
@@ -64,6 +75,17 @@ export interface Profile {
   balance: string; // i128 as string
   registeredAt: number;
   updatedAt: number;
+  streak?: number;
+  domain?: string;
+  domainVerified?: boolean;
+  domainVerifiedAt?: number;
+  customMinTip?: string;
+  verification?: {
+    isVerified: boolean;
+    verificationType?: string;
+    verifiedAt?: number;
+    revokedAt?: number;
+  };
 }
 
 /** Tip record from the contract */
@@ -74,6 +96,7 @@ export interface Tip {
   amount: string; // i128 as string
   message: string;
   timestamp: number;
+  isEncrypted?: boolean;
 }
 
 /** Leaderboard entry */
@@ -94,55 +117,58 @@ export interface ContractStats {
   feeBps: number;
 }
 
+/** Supporter streak for a creator/supporter pair. */
+export interface Streak {
+  supporter: string;
+  creator: string;
+  current: number;
+  longest: number;
+  lastTipDay: number | null;
+  bonusPoints: number;
+}
+
 /** Credit score tiers */
-export type CreditTier = 'new' | 'bronze' | 'silver' | 'gold' | 'diamond';
+export type CreditTier = "new" | "bronze" | "silver" | "gold" | "diamond";
 
 export const getCreditTier = (score: number): CreditTier => {
-  if (score >= 80) return 'diamond';
-  if (score >= 60) return 'gold';
-  if (score >= 40) return 'silver';
-  if (score >= 20) return 'bronze';
-  return 'new';
+  if (score >= 80) return "diamond";
+  if (score >= 60) return "gold";
+  if (score >= 40) return "silver";
+  if (score >= 20) return "bronze";
+  return "new";
 };
 
-/** Contract interface version */
-export const CONTRACT_INTERFACE_VERSION = '1.0.0';
-
-/**
- * Parsers that transform raw contract responses into strongly-typed frontend objects.
- * Standardizes key case from snake_case to camelCase.
- */
-
-export function parseProfile(raw: any): Profile {
-  if (!raw) {
-    throw new Error('Invalid raw profile: null or undefined');
-  }
-  return mapContractResponse<Profile>(raw);
+/** Fundraising goal for a creator */
+export interface Goal {
+  creator: string;
+  title: string;
+  description: string;
+  targetAmount: string; // i128 as string (stroops)
+  raisedAmount: string;
+  supporters: number;
+  startDate: number;
+  endDate: number;
+  active: boolean;
+  completed: boolean;
+  completedAt?: number;
 }
 
-export function parseLeaderboardEntry(raw: any): LeaderboardEntry {
-  if (!raw) {
-    throw new Error('Invalid raw leaderboard entry: null or undefined');
-  }
-  const parsed = mapContractResponse<any>(raw);
-  if (parsed.score !== undefined && parsed.creditScore === undefined) {
-    parsed.creditScore = parsed.score;
-  } else if (parsed.creditScore !== undefined && parsed.score === undefined) {
-    parsed.score = parsed.creditScore;
-  }
-  return parsed as LeaderboardEntry;
+/** Recurring tip subscription from the contract */
+export interface Subscription {
+  subscriber: string;
+  creator: string;
+  amount: string;
+  intervalDays: number;
+  nextDue: number;
+  active: boolean;
 }
 
-export function parseTip(raw: any): Tip {
-  if (!raw) {
-    throw new Error('Invalid raw tip: null or undefined');
-  }
-  return mapContractResponse<Tip>(raw);
-}
-
-export function parseContractStats(raw: any): ContractStats {
-  if (!raw) {
-    throw new Error('Invalid raw contract stats: null or undefined');
-  }
-  return mapContractResponse<ContractStats>(raw);
+/** Raw subscription record as returned by the contract before key mapping. */
+export interface RawSubscription {
+  subscriber: string;
+  creator: string;
+  amount: string;
+  interval_days: number;
+  next_due: number;
+  active: boolean;
 }

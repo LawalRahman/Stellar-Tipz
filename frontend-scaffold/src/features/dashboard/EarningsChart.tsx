@@ -184,7 +184,7 @@ const EarningsChart: React.FC<EarningsChartProps> = ({ tips, earningsData }) => 
     <div className="space-y-5" data-testid="earnings-chart">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <p className="text-xs font-black uppercase tracking-[0.25em] text-gray-500">
+          <p className="text-xs font-black uppercase tracking-[0.25em] text-gray-800 dark:text-gray-200">
             Earnings analytics
           </p>
           <h3 className="text-xl font-black uppercase">{title}</h3>
@@ -215,7 +215,7 @@ const EarningsChart: React.FC<EarningsChartProps> = ({ tips, earningsData }) => 
 
       <div className="border-2 border-black bg-white p-4 sm:p-6">
         {!hasData ? (
-          <div className="flex h-56 flex-col items-center justify-center gap-3 bg-gray-50 text-gray-500">
+          <div className="flex h-56 flex-col items-center justify-center gap-3 bg-gray-50 text-gray-800 dark:text-gray-200">
             <Coins size={32} />
             <p className="text-sm font-black uppercase tracking-widest">No earnings yet</p>
           </div>
@@ -230,7 +230,7 @@ const EarningsChart: React.FC<EarningsChartProps> = ({ tips, earningsData }) => 
                 />
                 <YAxis tick={{ fontSize: 10, fontWeight: 900 }} width={44} />
                 <Tooltip
-                  formatter={(value: any) => [`${Number(value).toFixed(2)} XLM`, "Earnings"]}
+                  formatter={(value: number | string) => [`${Number(value).toFixed(2)} XLM`, "Earnings"]}
                   contentStyle={{
                     border: "2px solid #000",
                     borderRadius: 0,

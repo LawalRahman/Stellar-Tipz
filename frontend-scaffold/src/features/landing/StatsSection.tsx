@@ -6,6 +6,7 @@ import { ContractStats } from '@/types/contract';
 import { categorizeError, ERRORS } from '@/helpers/error';
 import { env } from '@/helpers/env';
 import Skeleton from '@/components/ui/Skeleton';
+import { logger } from '../../services/logger';
 
 const FALLBACK_STATS = {
   feePct: 2,
@@ -50,7 +51,7 @@ const StatsSection: React.FC = () => {
       .then(setStats)
       .catch((err) => {
         // Contract may not be deployed yet — render gracefully with fallback
-        console.warn('[StatsSection] Could not fetch live platform stats:', err);
+        logger.warn('features/landing/StatsSection', 'Could not fetch live platform stats', undefined, err instanceof Error ? err : new Error(String(err)));
         const { addToast } = useToastStore.getState();
         addToast({
           message: categorizeError(err).category === 'network' ? ERRORS.NETWORK : 'Could not fetch live platform stats.',
@@ -61,9 +62,14 @@ const StatsSection: React.FC = () => {
   }, []);
 
   return (
-    <section className="py-20 px-4 bg-off-white border-t-3 border-b-3 border-black">
+    <section
+      role="region"
+      aria-labelledby="stats-heading"
+      className="py-20 px-4 bg-off-white border-t-3 border-b-3 border-black"
+    >
       <div className="max-w-6xl mx-auto">
         <motion.h2
+          id="stats-heading"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}

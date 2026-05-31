@@ -1,5 +1,8 @@
 //! Credit score calculation and tier classification for the Tipz contract.
 //!
+//! For the complete credit score documentation including formula, weights, examples,
+//! and update mechanisms, see [`docs/CREDIT_SCORE.md`](../../../docs/CREDIT_SCORE.md).
+//!
 //! ## Score range
 //! All scores are in the range **0 – 100**.  Newly registered profiles start
 //! at the base score of **40** (bottom of the Silver tier) because they
@@ -11,6 +14,7 @@
 //!       + tip_sub  * 20 / 100   (0-20 pts — tip volume component)
 //!       + x_sub    * 30 / 100   (0-30 pts — X metrics component)
 //!       + age_sub  * 10 / 100   (0-10 pts — account age component)
+//!       + streak_bonus           (0-∞ pts — streak bonus component, capped at 100)
 //!
 //! capped at 100
 //! ```
@@ -22,6 +26,7 @@
 //! | `tip_sub`  | `total_tips_received (stroops) / 10_000_000`       | 100 |
 //! | `x_sub`    | `min(followers/50, 50) + min((posts+replies×1.5)/10, 50)` | 100 |
 //! | `age_sub`  | `age_in_days / 10`  (0 when age < 1 day)          | 100 |
+//! | `streak_bonus` | `sum of supporter streak milestones / 7`        | 100 |
 //!
 //! ## Tier boundaries
 //! | Tier    | Range   |
@@ -75,6 +80,9 @@ pub const X_SUB_CAP: u32 = 50;
 /// Hard cap for normalized age sub-score.
 pub const AGE_CAP: u32 = 100;
 
+/// Bonus score awarded for each 7-tip streak milestone.
+pub const STREAK_BONUS_SCORE: u32 = 1;
+
 /// Tip volume (in stroops) that yields the maximum tip sub-score.
 const TIP_VOLUME_CAP: i128 = (TIP_CAP as i128) * TIP_DIVISOR;
 
@@ -82,10 +90,22 @@ const TIP_VOLUME_CAP: i128 = (TIP_CAP as i128) * TIP_DIVISOR;
 /// contribute anything to the score.
 const SECONDS_PER_DAY: u64 = 86_400;
 
+/// Hard upper bound on the credit score stored in a profile. Scores computed
+/// above this value are clamped here to prevent unbounded growth.
+pub const MAX_CREDIT_SCORE: u32 = MAX_SCORE;
+
 /// Build the weighted credit component breakdown for `profile` at `now`.
 pub fn get_credit_breakdown_for_profile(profile: &Profile, now: u64) -> CreditBreakdown {
+    // ── Step 1: tip sub-score (0–100) ──────────────────────────────────────
+    // Clamp lifetime tip volume to [0, TIP_VOLUME_CAP] so a single whale tip
+    // can't dominate, then divide by TIP_DIVISOR (10 XLM in stroops) so every
+    // 10 XLM received earns one sub-score point, saturating at 100.
     let tip_sub: u32 = (profile.total_tips_received.clamp(0, TIP_VOLUME_CAP) / TIP_DIVISOR) as u32;
 
+    // ── Step 2: X (social) sub-score (0–100) ───────────────────────────────
+    // Two independently-capped halves (each ≤ X_SUB_CAP = 50): reach from
+    // follower count and engagement from the average interaction rate. A
+    // profile with no X data contributes nothing here.
     let x_sub: u32 = if profile.x_followers == 0 && profile.x_engagement_avg == 0 {
         0
     } else {
@@ -95,6 +115,10 @@ pub fn get_credit_breakdown_for_profile(profile: &Profile, now: u64) -> CreditBr
         follower_part + engagement_part
     };
 
+    // ── Step 3: account-age sub-score (0–100) ──────────────────────────────
+    // Rewards longevity: one point per AGE_DIVISOR (10) days of account age.
+    // Guard against clock skew (`now <= registered_at`) and grant nothing for
+    // accounts younger than a day so brand-new profiles don't earn age points.
     let age_sub: u32 =
         if now <= profile.registered_at || now - profile.registered_at < SECONDS_PER_DAY {
             0
@@ -103,18 +127,39 @@ pub fn get_credit_breakdown_for_profile(profile: &Profile, now: u64) -> CreditBr
             (age_days as u32 / AGE_DIVISOR).min(AGE_CAP)
         };
 
-    let tip_score = tip_sub * TIP_WEIGHT / MAX_SCORE;
-    let x_score = x_sub * X_WEIGHT / MAX_SCORE;
-    let age_score = age_sub * AGE_WEIGHT / MAX_SCORE;
-    let total = (BASE_SCORE + tip_score + x_score + age_score).min(MAX_SCORE);
+    // ── Step 4: weight each sub-score and sum onto the base ─────────────────
+    // Each 0–100 sub-score is scaled by its weight (out of MAX_SCORE = 100),
+    // yielding the documented point budgets: tips ≤20, X ≤30, age ≤10. The
+    // weighted parts are added to BASE_SCORE (40) and the total is capped at
+    // MAX_SCORE so the result always lands in 0–100.
+    // Saturating arithmetic is used throughout so that pathological inputs
+    // (e.g. all fields at maximum) can never cause a u32 overflow.
+    let tip_score = tip_sub.saturating_mul(TIP_WEIGHT) / MAX_SCORE;
+    let x_score = x_sub.saturating_mul(X_WEIGHT) / MAX_SCORE;
+    let age_score = age_sub.saturating_mul(AGE_WEIGHT) / MAX_SCORE;
+    let total = BASE_SCORE
+        .saturating_add(tip_score)
+        .saturating_add(x_score)
+        .saturating_add(age_score)
+        .min(MAX_SCORE);
 
     CreditBreakdown {
         base: BASE_SCORE,
         tip_score,
         x_score,
         age_score,
+        streak_score: 0,
         total,
     }
+}
+
+/// Build the weighted credit breakdown for `profile` including streak bonus.
+pub fn get_credit_breakdown_with_streak(env: &Env, profile: &Profile, now: u64) -> CreditBreakdown {
+    let mut breakdown = get_credit_breakdown_for_profile(profile, now);
+    let streak_score = storage::get_creator_streak_bonus(env, &profile.owner).min(MAX_SCORE);
+    breakdown.streak_score = streak_score;
+    breakdown.total = breakdown.total.saturating_add(streak_score).min(MAX_SCORE);
+    breakdown
 }
 
 /// Compute the credit score (0–100) for `profile` at the given `now` timestamp
@@ -129,6 +174,11 @@ pub fn get_credit_breakdown_for_profile(profile: &Profile, now: u64) -> CreditBr
 /// | account age < 1 day                      | age component = 0              |
 pub fn calculate_credit_score(profile: &Profile, now: u64) -> u32 {
     get_credit_breakdown_for_profile(profile, now).total
+}
+
+/// Compute the credit score including streak bonuses.
+pub fn calculate_credit_score_with_streak(env: &Env, profile: &Profile, now: u64) -> u32 {
+    get_credit_breakdown_with_streak(env, profile, now).total
 }
 
 /// Map a credit score (0–100) to its [`CreditTier`].
@@ -158,7 +208,7 @@ pub fn get_credit_tier(env: &Env, address: &Address) -> Result<(u32, CreditTier)
     let profile: Profile = storage::get_profile(env, address);
 
     let now = env.ledger().timestamp();
-    let score = calculate_credit_score(&profile, now);
+    let score = calculate_credit_score_with_streak(env, &profile, now);
     let tier = get_tier(score);
 
     Ok((score, tier))
@@ -175,5 +225,5 @@ pub fn get_credit_breakdown(
 
     let profile: Profile = storage::get_profile(env, address);
     let now = env.ledger().timestamp();
-    Ok(get_credit_breakdown_for_profile(&profile, now))
+    Ok(get_credit_breakdown_with_streak(env, &profile, now))
 }

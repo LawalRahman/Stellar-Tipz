@@ -12,7 +12,12 @@ interface EnvConfig {
 /**
  * Safely reads environment variables from Vite
  */
-function getEnv(): EnvConfig {
+export function getEnv(envVars?: Record<string, string | undefined>): EnvConfig {
+  const source =
+    envVars ??
+    (import.meta as unknown as { env: Record<string, string | undefined> }).env ??
+    {};
+
   const {
     VITE_SOROBAN_RPC_URL,
     VITE_HORIZON_URL,
@@ -20,17 +25,14 @@ function getEnv(): EnvConfig {
     VITE_CONTRACT_ID,
     VITE_NETWORK,
     VITE_USE_MOCK_DATA,
-  } = (import.meta as unknown as { env: Record<string, string | undefined> }).env
+  } = source;
 
   return {
-    sorobanRpcUrl:
-      VITE_SOROBAN_RPC_URL || "https://soroban-testnet.stellar.org",
+    sorobanRpcUrl: VITE_SOROBAN_RPC_URL || "https://soroban-testnet.stellar.org",
 
-    horizonUrl:
-      VITE_HORIZON_URL || "https://horizon-testnet.stellar.org",
+    horizonUrl: VITE_HORIZON_URL || "https://horizon-testnet.stellar.org",
 
-    networkPassphrase:
-      VITE_NETWORK_PASSPHRASE || "Test SDF Network ; September 2015",
+    networkPassphrase: VITE_NETWORK_PASSPHRASE || "Test SDF Network ; September 2015",
 
     contractId: VITE_CONTRACT_ID || "",
 
@@ -40,3 +42,51 @@ function getEnv(): EnvConfig {
 }
 
 export const env = getEnv();
+
+function isValidUrl(value: string): boolean {
+  try {
+    new URL(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function isValidContractId(value: string): boolean {
+  return /^C[A-Z0-9]{55}$/.test(value);
+}
+
+/**
+ * Validates required environment variables at startup.
+ * Throws on missing critical vars; warns on missing optional vars.
+ */
+export function validateEnv(envVars?: Record<string, string | undefined>): void {
+  const source =
+    envVars ??
+    (import.meta as unknown as { env: Record<string, string | undefined> }).env ??
+    {};
+
+  if (!source.VITE_CONTRACT_ID) {
+    throw new Error("VITE_CONTRACT_ID is required – provide a Stellar contract address in your .env file");
+  }
+
+  if (!isValidContractId(source.VITE_CONTRACT_ID)) {
+    throw new Error(`VITE_CONTRACT_ID has invalid format. Expected Stellar contract address starting with 'C' followed by 55 alphanumeric characters, got: ${source.VITE_CONTRACT_ID}`);
+  }
+
+  if (source.VITE_SOROBAN_RPC_URL && !isValidUrl(source.VITE_SOROBAN_RPC_URL)) {
+    throw new Error("VITE_SOROBAN_RPC_URL must be a valid URL");
+  }
+
+  if (source.VITE_HORIZON_URL && !isValidUrl(source.VITE_HORIZON_URL)) {
+    throw new Error("VITE_HORIZON_URL must be a valid URL");
+  }
+
+  if (source.VITE_NETWORK_PASSPHRASE && !source.VITE_NETWORK_PASSPHRASE.trim()) {
+    throw new Error("VITE_NETWORK_PASSPHRASE cannot be empty");
+  }
+
+  if (!source.VITE_SENTRY_DSN) {
+    console.warn("[env] VITE_SENTRY_DSN is not set – error tracking will be disabled");
+  }
+}

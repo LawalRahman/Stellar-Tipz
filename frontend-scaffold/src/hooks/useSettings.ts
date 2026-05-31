@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { secureStorage } from '../services/secureStorage';
+import { logger } from '../services/logger';
 
 export interface Settings {
     tipNotifications: boolean;
@@ -30,35 +32,37 @@ export const useSettings = () => {
 
     // Load settings from localStorage on mount
     useEffect(() => {
-        try {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                const parsed = JSON.parse(saved);
-                setSettings({ ...DEFAULT_SETTINGS, ...parsed });
+        const loadSettings = async () => {
+            try {
+                const saved = await secureStorage.get(STORAGE_KEY);
+                if (saved) {
+                    setSettings({ ...DEFAULT_SETTINGS, ...saved });
+                }
+            } catch (error) {
+                logger.error('hooks/useSettings', 'Failed to load settings', undefined, error instanceof Error ? error : new Error(String(error)));
+            } finally {
+                setIsLoading(false);
             }
-        } catch (error) {
-            console.error('Failed to load settings:', error);
-        } finally {
-            setIsLoading(false);
-        }
+        };
+        loadSettings();
     }, []);
 
-    const updateSettings = (updates: Partial<Settings>) => {
+    const updateSettings = async (updates: Partial<Settings>) => {
         const newSettings = { ...settings, ...updates };
         setSettings(newSettings);
         try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
+            await secureStorage.set(STORAGE_KEY, newSettings);
         } catch (error) {
-            console.error('Failed to save settings:', error);
+            logger.error('hooks/useSettings', 'Failed to save settings', undefined, error instanceof Error ? error : new Error(String(error)));
         }
     };
 
     const resetSettings = () => {
         setSettings(DEFAULT_SETTINGS);
         try {
-            localStorage.removeItem(STORAGE_KEY);
+            secureStorage.remove(STORAGE_KEY);
         } catch (error) {
-            console.error('Failed to reset settings:', error);
+            logger.error('hooks/useSettings', 'Failed to reset settings', undefined, error instanceof Error ? error : new Error(String(error)));
         }
     };
 

@@ -10,6 +10,7 @@ import {
   formatXlmDisplay,
 } from "../../helpers/format";
 import { useWallet, useContract, useBalance } from "../../hooks";
+import { logger } from '../../services/logger';
 import { BASE_FEE } from "../../services";
 import FeeBreakdown from "./FeeBreakdown";
 import Skeleton from "../../components/ui/Skeleton";
@@ -17,6 +18,8 @@ import Skeleton from "../../components/ui/Skeleton";
 interface TipAmountInputProps {
   amount: string;
   onChange: (amount: string) => void;
+  /** Creator wallet address — when set, uses per-creator minimum tip if configured */
+  creatorAddress?: string;
 }
 
 const QUICK_AMOUNTS = ["1", "5", "10", "25", "50"];
@@ -26,9 +29,10 @@ const ESTIMATED_NETWORK_FEE_XLM = new BigNumber(stroopToXlm(BASE_FEE, 5));
 const TipAmountInput: React.FC<TipAmountInputProps> = ({
   amount,
   onChange,
+  creatorAddress,
 }) => {
   const { connected, publicKey } = useWallet();
-  const { getMinTipAmount } = useContract();
+  const { getMinTipAmount, getCreatorMinTip } = useContract();
   const [useCustom, setUseCustom] = useState(!QUICK_AMOUNTS.includes(amount));
   const [minTipXlm, setMinTipXlm] = useState<string>(DEFAULT_MIN_TIP_XLM);
   const { balance: fetchedBalance, loading } = useBalance(publicKey);
@@ -39,12 +43,14 @@ const TipAmountInput: React.FC<TipAmountInputProps> = ({
 
     const fetchMinTip = async () => {
       try {
-        const minTip = await getMinTipAmount();
+        const minTip = creatorAddress
+          ? await getCreatorMinTip(creatorAddress)
+          : await getMinTipAmount();
         if (active) {
           setMinTipXlm(minTip);
         }
       } catch (err) {
-        console.error("Failed to fetch minimum tip amount:", err);
+        logger.warn('features/tipping/TipAmountInput', 'Failed to fetch minimum tip amount', undefined, err instanceof Error ? err : new Error(String(err)));
         // Use default if fetch fails
         if (active) {
           setMinTipXlm(DEFAULT_MIN_TIP_XLM);
@@ -57,7 +63,7 @@ const TipAmountInput: React.FC<TipAmountInputProps> = ({
     return () => {
       active = false;
     };
-  }, [getMinTipAmount]);
+  }, [getMinTipAmount, getCreatorMinTip, creatorAddress]);
 
   const effectiveBalance = fetchedBalance;
   const numericAmount = Number(amount);

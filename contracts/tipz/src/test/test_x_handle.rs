@@ -1,7 +1,7 @@
 #![cfg(test)]
 
-use soroban_sdk::{testutils::Address as _, Address, String};
 use crate::test::test_profiles::setup;
+use soroban_sdk::{testutils::Address as _, Address, String};
 
 #[test]
 fn test_x_handle_normalization_register() {
@@ -73,5 +73,5 @@ fn test_x_handle_normalization_update() {
     );
 
     let updated = client.get_profile(&caller);
-    assert_eq!(updated.x_handle, String::from_str(&env, "@new_handle"));
+    assert_eq!(updated.profile.x_handle, String::from_str(&env, "@new_handle"));
 }

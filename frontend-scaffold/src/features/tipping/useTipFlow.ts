@@ -1,19 +1,25 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useTipz } from "../../hooks";
+import { queueOfflineTip } from "../../services/serviceWorker";
+import { logger } from "../../services/logger";
 
 export type TipFlowStep =
   | "form"
   | "confirm"
+  | "preparing"
   | "signing"
   | "submitting"
+  | "confirming"
   | "success"
+  | "queued"
   | "error";
 
 interface UseTipFlowReturn {
   step: TipFlowStep;
-  goToConfirm: (amount: string, message: string) => void;
+  goToConfirm: (amount: string, message: string, isEncrypted?: boolean) => void;
   confirmAndSign: () => Promise<void>;
+  retry: () => Promise<void>;
   reset: () => void;
   error: string | null;
   txHash: string | null;
@@ -25,6 +31,7 @@ export const useTipFlow = (creatorAddress: string): UseTipFlowReturn => {
   const [draft, setDraft] = useState<{
     amount: string;
     message: string;
+    isEncrypted: boolean;
   } | null>(null);
 
   useEffect(() => {
@@ -35,7 +42,7 @@ export const useTipFlow = (creatorAddress: string): UseTipFlowReturn => {
       }
 
       if (txStatus === "submitting" || txStatus === "confirming") {
-        setStep("submitting");
+        setStep(txStatus);
         return;
       }
 
@@ -51,8 +58,8 @@ export const useTipFlow = (creatorAddress: string): UseTipFlowReturn => {
     return () => clearTimeout(timeoutId);
   }, [txStatus]);
 
-  const goToConfirm = useCallback((amount: string, message: string) => {
-    setDraft({ amount, message });
+  const goToConfirm = useCallback((amount: string, message: string, isEncrypted = false) => {
+    setDraft({ amount, message, isEncrypted });
     setStep("confirm");
   }, []);
 
@@ -62,7 +69,29 @@ export const useTipFlow = (creatorAddress: string): UseTipFlowReturn => {
       return;
     }
 
-    await sendTip(creatorAddress, draft.amount, draft.message);
+    setStep("preparing");
+
+    // Queue the operation if the user is currently offline.
+    if (!navigator.onLine) {
+      try {
+        await queueOfflineTip({
+          creator: creatorAddress,
+          amount: draft.amount,
+          message: draft.message,
+        });
+      } catch (err) {
+        logger.warn(
+          'features/tipping/useTipFlow',
+          'queueOfflineTip failed',
+          { creator: creatorAddress },
+          err instanceof Error ? err : new Error(String(err)),
+        );
+      }
+      setStep("queued");
+      return;
+    }
+
+    await sendTip(creatorAddress, draft.amount, draft.message, draft.isEncrypted);
   }, [creatorAddress, draft, sendTip]);
 
   const reset = useCallback(() => {
@@ -76,6 +105,7 @@ export const useTipFlow = (creatorAddress: string): UseTipFlowReturn => {
       step,
       goToConfirm,
       confirmAndSign,
+      retry: confirmAndSign,
       reset,
       error,
       txHash,
