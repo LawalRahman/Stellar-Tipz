@@ -16,6 +16,7 @@
     "types": ["vitest/globals", "@testing-library/jest-dom"],
     "baseUrl": ".",
     "paths": {
+      "@/i18n": ["src/i18n/index.ts"],
       "@/*": ["src/*"]
     }
   },

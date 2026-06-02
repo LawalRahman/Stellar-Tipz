@@ -7,6 +7,7 @@ import { categorizeError, ERRORS } from '@/helpers/error';
 import { env } from '@/helpers/env';
 import Skeleton from '@/components/ui/Skeleton';
 import { logger } from '../../services/logger';
+import { useI18n } from '@/i18n';
 
 const FALLBACK_STATS = {
   feePct: 2,
@@ -26,13 +27,14 @@ const MOCK_STATS: ContractStats = {
 };
 
 const comparisonRows = [
-  { feature: 'Fees', traditional: '30–50%', tipz: '2%', highlight: true },
-  { feature: 'Settlement', traditional: '7–30 days', tipz: '3-5 seconds', highlight: true },
-  { feature: 'Access', traditional: 'Regional', tipz: 'Global', highlight: false },
-  { feature: 'Transparency', traditional: 'Hidden', tipz: 'On-Chain', highlight: false },
+  { featureKey: 'stats.fees', traditional: '30-50%', tipz: '2%', highlight: true },
+  { featureKey: 'stats.settlement', traditional: '7-30 days', tipz: '3-5 seconds', highlight: true },
+  { featureKey: 'stats.access', traditionalKey: 'stats.regional', tipzKey: 'stats.global', highlight: false },
+  { featureKey: 'stats.transparency', traditionalKey: 'stats.hidden', tipzKey: 'stats.onChain', highlight: false },
 ];
 
 const StatsSection: React.FC = () => {
+  const { t } = useI18n();
   const [stats, setStats] = useState<ContractStats | null>(
     env.useMockData ? MOCK_STATS : null,
   );
@@ -54,7 +56,7 @@ const StatsSection: React.FC = () => {
         logger.warn('features/landing/StatsSection', 'Could not fetch live platform stats', undefined, err instanceof Error ? err : new Error(String(err)));
         const { addToast } = useToastStore.getState();
         addToast({
-          message: categorizeError(err).category === 'network' ? ERRORS.NETWORK : 'Could not fetch live platform stats.',
+          message: categorizeError(err).category === 'network' ? ERRORS.NETWORK : t('stats.liveError'),
           type: 'error',
         });
       });
@@ -75,7 +77,7 @@ const StatsSection: React.FC = () => {
           viewport={{ once: true }}
           className="text-5xl md:text-6xl font-black text-center mb-16"
         >
-          TIPZ VS TRADITIONAL
+          {t("stats.heading")}
         </motion.h2>
 
         {/* Live or mock stats */}
@@ -93,7 +95,7 @@ const StatsSection: React.FC = () => {
                 </div>
               )}
             </div>
-            <div className="text-sm uppercase font-bold tracking-wide">Creators</div>
+            <div className="text-sm uppercase font-bold tracking-wide">{t("stats.creators")}</div>
           </div>
           <div className="card-brutalist text-center">
             <div className="text-4xl font-black mb-1">
@@ -103,7 +105,7 @@ const StatsSection: React.FC = () => {
                 </div>
               )}
             </div>
-            <div className="text-sm uppercase font-bold tracking-wide">Tips Sent</div>
+            <div className="text-sm uppercase font-bold tracking-wide">{t("stats.tipsSent")}</div>
           </div>
           <div className="card-brutalist text-center">
             <div className="text-4xl font-black mb-1">
@@ -113,7 +115,7 @@ const StatsSection: React.FC = () => {
                 </div>
               )}
             </div>
-            <div className="text-sm uppercase font-bold tracking-wide">Platform Fee</div>
+            <div className="text-sm uppercase font-bold tracking-wide">{t("stats.platformFee")}</div>
           </div>
         </motion.div>
 
@@ -122,18 +124,18 @@ const StatsSection: React.FC = () => {
           <table className="w-full">
             <thead>
               <tr className="border-b-2 border-black">
-                <th className="text-left py-4 px-4 font-black uppercase">Feature</th>
-                <th className="text-left py-4 px-4 font-black uppercase">Traditional</th>
-                <th className="text-left py-4 px-4 font-black uppercase bg-black text-white">Tipz</th>
+                <th className="text-left py-4 px-4 font-black uppercase">{t("stats.feature")}</th>
+                <th className="text-left py-4 px-4 font-black uppercase">{t("stats.traditional")}</th>
+                <th className="text-left py-4 px-4 font-black uppercase bg-black text-white">{t("stats.tipz")}</th>
               </tr>
             </thead>
             <tbody>
               {comparisonRows.map((row) => (
-                <tr key={row.feature} className="border-b border-gray-300">
-                  <td className="py-4 px-4 font-bold">{row.feature}</td>
-                  <td className="py-4 px-4 text-gray-600">{row.traditional}</td>
+                <tr key={row.featureKey} className="border-b border-gray-300">
+                  <td className="py-4 px-4 font-bold">{t(row.featureKey)}</td>
+                  <td className="py-4 px-4 text-gray-600">{row.traditionalKey ? t(row.traditionalKey) : row.traditional}</td>
                   <td className={`py-4 px-4 font-bold ${row.highlight ? 'text-green-600' : ''}`}>
-                    {row.tipz}
+                    {row.tipzKey ? t(row.tipzKey) : row.tipz}
                   </td>
                 </tr>
               ))}
@@ -149,7 +151,10 @@ const StatsSection: React.FC = () => {
         >
           <div className="inline-block card-brutalist bg-black text-white px-8 py-4">
             <p className="text-2xl font-black">
-              {FALLBACK_STATS.feesSaved} SAVINGS | {FALLBACK_STATS.speedup} FASTER
+              {t("stats.savingsFaster", {
+                savings: FALLBACK_STATS.feesSaved,
+                speedup: FALLBACK_STATS.speedup,
+              })}
             </p>
           </div>
         </motion.div>

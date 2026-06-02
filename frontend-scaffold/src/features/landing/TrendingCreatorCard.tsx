@@ -6,6 +6,7 @@ import Avatar from "@/components/ui/Avatar";
 import CreditBadge from "@/components/shared/CreditBadge";
 import { stroopToXlm } from "@/helpers/format";
 import { getTierFromScore } from "@/helpers/badge";
+import { useI18n } from "@/i18n";
 
 interface TrendingCreatorCardProps {
   rank: number;
@@ -51,6 +52,7 @@ const TrendingCreatorCard: React.FC<TrendingCreatorCardProps> = ({
   isFallback,
   animationDelay = 0,
 }) => {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const style = RANK_STYLES[rank] ?? DEFAULT_STYLE;
   const tier = getTierFromScore(creditScore);
@@ -74,7 +76,9 @@ const TrendingCreatorCard: React.FC<TrendingCreatorCardProps> = ({
       onClick={() => navigate(`/@${username}`)}
       role="button"
       tabIndex={0}
-      aria-label={`View profile of ${displayName || username}`}
+      aria-label={t("landing.trending.viewProfileOf", {
+        name: displayName || username,
+      })}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
@@ -123,12 +127,12 @@ const TrendingCreatorCard: React.FC<TrendingCreatorCardProps> = ({
           {isFallback || !hasWeeklyTips ? (
             <>
               <TrendingUp size={11} />
-              All-time tips
+              {t("landing.trending.allTime")}
             </>
           ) : (
             <>
               <Zap size={11} className="text-yellow-500" />
-              This week
+              {t("landing.trending.thisWeek")}
             </>
           )}
         </p>
@@ -140,7 +144,7 @@ const TrendingCreatorCard: React.FC<TrendingCreatorCardProps> = ({
       {/* Hover CTA */}
       <div className="absolute inset-x-0 bottom-0 translate-y-full overflow-hidden transition-all duration-200 group-hover:translate-y-0">
         <div className="border-t-[3px] border-black bg-black py-2 text-center text-xs font-black uppercase tracking-widest text-white">
-          View profile →
+          {t("landing.trending.viewProfile")} →
         </div>
       </div>
     </motion.article>

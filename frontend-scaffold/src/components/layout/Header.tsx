@@ -79,7 +79,7 @@ const Header: React.FC = () => {
 
   return (
     <header
-      aria-label="Site header"
+      aria-label={t("nav.header")}
       className="relative z-30 border-b-3 border-black bg-white dark:border-white dark:bg-black"
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
@@ -92,7 +92,7 @@ const Header: React.FC = () => {
           <span className="text-xl">*</span>
         </Link>
 
-        <nav aria-label="Primary navigation" className="hidden items-center gap-6 md:flex">
+        <nav aria-label={t("nav.primary")} className="hidden items-center gap-6 md:flex">
           <Link
             to="/leaderboard"
             aria-current={isActivePath("/leaderboard") ? "page" : undefined}
@@ -113,7 +113,7 @@ const Header: React.FC = () => {
                 : "font-bold hover:underline"
             }`}
           >
-            Help
+            {t("nav.help")}
           </Link>
           <Link
             to="/dashboard"
@@ -135,7 +135,7 @@ const Header: React.FC = () => {
                 : "font-bold hover:underline"
             }`}
           >
-            Transactions
+            {t("nav.transactions")}
           </Link>
           <Link
             to="/profile"
@@ -157,16 +157,18 @@ const Header: React.FC = () => {
             onClick={toggleTheme}
             className="inline-flex items-center justify-center border-2 border-black bg-white p-2 transition-opacity hover:opacity-60 dark:border-white dark:bg-black"
             style={{ boxShadow: shadow }}
-            aria-label={`Switch to ${
-              theme === "light" ? "dark" : "light"
-            } mode`}
+            aria-label={t("theme.switchTo", {
+              mode: theme === "light" ? t("common.dark") : t("common.light"),
+            })}
           >
             {theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
           </button>
           <button
             type="button"
-            title={`Keyboard shortcuts (${getModifierKey()} + /)`}
-            aria-label="Show keyboard shortcuts"
+            title={t("shortcuts.keyboard", {
+              shortcut: `${getModifierKey()} + /`,
+            })}
+            aria-label={t("shortcuts.show")}
             className="inline-flex items-center justify-center border-2 border-black bg-white p-2 transition-opacity hover:opacity-60 dark:border-white dark:bg-black"
             style={{ boxShadow: shadow }}
             onClick={openKeyboardShortcuts}
@@ -208,7 +210,7 @@ const Header: React.FC = () => {
             className="inline-flex items-center justify-center border-2 border-black bg-white p-2 dark:border-white dark:bg-black"
             style={{ boxShadow: shadow }}
             aria-label={
-              mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"
+              mobileMenuOpen ? t("nav.closeMenu") : t("nav.openMenu")
             }
             aria-expanded={mobileMenuOpen}
             onClick={() => setMobileMenuOpen((open) => !open)}

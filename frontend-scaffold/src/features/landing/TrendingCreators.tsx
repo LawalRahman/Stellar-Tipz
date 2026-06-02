@@ -6,6 +6,7 @@ import { useTrendingCreators } from "@/hooks/useTrendingCreators";
 import TrendingCreatorCard from "./TrendingCreatorCard";
 import Skeleton from "@/components/ui/Skeleton";
 import EmptyState from "@/components/ui/EmptyState";
+import { useI18n } from "@/i18n";
 
 const TOP_N = 6;
 
@@ -33,6 +34,7 @@ const CardSkeleton: React.FC = () => (
  * Auto-refreshes every 5 minutes via the useTrendingCreators hook cache.
  */
 const TrendingCreators: React.FC = () => {
+  const { t } = useI18n();
   const { creators, loading, isFallback } = useTrendingCreators(TOP_N);
 
   if (loading) {
@@ -40,7 +42,7 @@ const TrendingCreators: React.FC = () => {
       <div
         className="grid grid-cols-2 gap-4 sm:grid-cols-3"
         aria-busy="true"
-        aria-label="Loading trending creators"
+        aria-label={t("landing.trending.loadingAria")}
       >
         {Array.from({ length: TOP_N }).map((_, i) => (
           <CardSkeleton key={i} />
@@ -54,8 +56,8 @@ const TrendingCreators: React.FC = () => {
       <div className="border-[3px] border-black bg-white">
         <EmptyState
           icon={<Flame />}
-          title="No trending creators yet"
-          description="Be the first to tip a creator and start the trend!"
+          title={t("landing.trending.emptyTitle")}
+          description={t("landing.trending.emptyDescription")}
         />
       </div>
     );
@@ -65,19 +67,21 @@ const TrendingCreators: React.FC = () => {
     <div className="space-y-4">
       {isFallback && (
         <p className="text-xs font-bold text-gray-600">
-          Showing all-time top creators — check back soon for weekly rankings.
+          {t("landing.trending.fallbackDescription")}
         </p>
       )}
       <motion.div
         className="grid grid-cols-2 gap-4 sm:grid-cols-3"
         role="list"
-        aria-label="Trending creators"
+        aria-label={t("landing.trending.aria")}
       >
         {creators.map((creator, index) => (
           <div key={creator.address} role="listitem">
             <Link
               to={`/profile/${creator.username}`}
-              aria-label={`View profile of ${creator.username}`}
+              aria-label={t("landing.trending.viewProfileOf", {
+                name: creator.username,
+              })}
               className="block"
             >
               <TrendingCreatorCard

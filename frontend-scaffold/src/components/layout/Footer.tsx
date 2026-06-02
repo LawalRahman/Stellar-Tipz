@@ -4,14 +4,12 @@ import { Link } from "react-router-dom";
 
 import { Language, useI18n } from "@/i18n";
 
-const languages: Language[] = ["en", "es", "fr", "pt"];
-
 const Footer: React.FC = () => {
-  const { language, languageNames, setLanguage, t } = useI18n();
+  const { language, languageNames, languages, setLanguage, t } = useI18n();
 
   return (
     <footer
-      aria-label="Site footer"
+      aria-label={t("nav.footer")}
       className="border-t-3 border-black bg-white py-10 dark:border-white dark:bg-black"
     >
       <div className="mx-auto max-w-6xl px-4">
@@ -50,7 +48,7 @@ const Footer: React.FC = () => {
             </label>
           </div>
 
-          <nav aria-label="Footer product navigation" className="flex flex-col gap-2">
+          <nav aria-label={t("footer.productAria")} className="flex flex-col gap-2">
             <h3 className="text-sm font-black uppercase tracking-wide">
               {t("footer.product")}
             </h3>
@@ -74,7 +72,7 @@ const Footer: React.FC = () => {
             </Link>
           </nav>
 
-          <nav aria-label="Footer resources navigation" className="flex flex-col gap-2">
+          <nav aria-label={t("footer.resourcesAria")} className="flex flex-col gap-2">
             <h3 className="text-sm font-black uppercase tracking-wide">
               {t("footer.resources")}
             </h3>
@@ -82,7 +80,7 @@ const Footer: React.FC = () => {
               to="/help"
               className="w-fit text-sm text-gray-600 transition-opacity hover:opacity-60 dark:text-gray-700 dark:text-gray-300"
             >
-              Help Center
+              {t("nav.help")}
             </Link>
             <a
               href="/docs"
@@ -108,7 +106,7 @@ const Footer: React.FC = () => {
             </a>
           </nav>
 
-          <section aria-label="Community links" className="flex flex-col gap-2">
+          <section aria-label={t("footer.communityAria")} className="flex flex-col gap-2">
             <h3 className="text-sm font-black uppercase tracking-wide">
               {t("footer.community")}
             </h3>

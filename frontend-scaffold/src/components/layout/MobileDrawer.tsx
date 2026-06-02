@@ -31,7 +31,7 @@ interface MobileNavItem {
 const navItems: MobileNavItem[] = [
   { to: "/leaderboard", labelKey: "nav.leaderboard" },
   { to: "/dashboard", labelKey: "nav.dashboard" },
-  { to: "/transactions", label: "Transactions" },
+  { to: "/transactions", labelKey: "nav.transactions" },
   { to: "/profile", labelKey: "nav.profile" },
 ];
 
@@ -131,7 +131,7 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
             ref={drawerRef}
             role="dialog"
             aria-modal="true"
-            aria-label="Navigation menu"
+            aria-label={t("nav.navigation")}
             className="ml-auto flex h-full w-full max-w-sm flex-col border-l-3 border-black bg-white text-black shadow-brutalist dark:border-white dark:bg-black dark:text-white"
             initial={{ x: shouldReduceMotion ? 0 : "100%" }}
             animate={{ x: 0 }}
@@ -161,14 +161,14 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
                 type="button"
                 onClick={onClose}
                 className="inline-flex min-h-10 min-w-10 items-center justify-center border-2 border-black bg-white p-2 dark:border-white dark:bg-black"
-                aria-label="Close navigation menu"
+                aria-label={t("nav.closeMenu")}
               >
                 <X size={20} />
               </button>
             </div>
 
             <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-4 py-5">
-              <nav aria-label="Mobile navigation">
+              <nav aria-label={t("nav.mobile")}>
                 <ul className="flex flex-col gap-3">
                   {navItems.map((item) => {
                     const isCurrent = location.pathname === item.to;
@@ -207,7 +207,9 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
                     onClick={toggleTheme}
                     className="inline-flex min-h-10 min-w-10 items-center justify-center border-2 border-black bg-white p-2 transition-opacity hover:opacity-70 dark:border-white dark:bg-black"
                     style={{ boxShadow: shadow }}
-                    aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+                    aria-label={t("theme.switchTo", {
+                      mode: theme === "light" ? t("common.dark") : t("common.light"),
+                    })}
                   >
                     {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
                   </button>
@@ -225,7 +227,9 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
                   onClick={handleKeyboardShortcuts}
                   className="flex min-h-10 items-center justify-between border-2 border-black bg-white px-3 py-2 text-xs font-bold uppercase dark:border-white dark:bg-black dark:text-white"
                 >
-                  Keyboard shortcuts ({getModifierKey()} + /)
+                  {t("shortcuts.keyboard", {
+                    shortcut: `${getModifierKey()} + /`,
+                  })}
                   <Keyboard size={16} aria-hidden="true" />
                 </button>
 
@@ -233,7 +237,9 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
                   <>
                     <WalletSwitcher onAddWallet={connect} />
                     <Button className="w-full" variant="outline" onClick={handleWalletAction}>
-                      Disconnect {walletLabel}
+                      {t("wallet.disconnectWithAddress", {
+                        address: walletLabel,
+                      })}
                     </Button>
                   </>
                 ) : (

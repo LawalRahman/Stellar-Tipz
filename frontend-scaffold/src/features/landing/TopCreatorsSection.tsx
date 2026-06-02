@@ -12,8 +12,10 @@ import { categorizeError } from "@/helpers/error";
 import { env } from "@/helpers/env";
 import { logger } from "../../services/logger";
 import { mockLeaderboard } from "@/features/mockData";
+import { useI18n } from "@/i18n";
 
 export default function TopCreatorsSection() {
+  const { t } = useI18n();
   const [creators, setCreators] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(
     Boolean(env.contractId) || import.meta.env.MODE === "test",
@@ -89,16 +91,16 @@ export default function TopCreatorsSection() {
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-yellow-100 border-2 border-black text-xs font-black uppercase tracking-widest">
               <Trophy size={14} />
-              Leaderboard
+              {t("landing.top.badge")}
             </div>
             <h2
               id="top-creators-heading"
               className="text-4xl md:text-5xl font-black uppercase leading-none"
             >
-              Top Creators
+              {t("landing.top.heading")}
             </h2>
             <p className="text-lg font-bold text-gray-600 max-w-xl">
-              Meet the most supported creators in the Tipz ecosystem.
+              {t("landing.top.description")}
             </p>
           </div>
 
@@ -106,7 +108,7 @@ export default function TopCreatorsSection() {
             onClick={handleViewFullLeaderboard}
             className="group inline-flex items-center gap-2 text-sm font-black uppercase tracking-wider hover:underline"
           >
-            View Full Leaderboard
+            {t("landing.top.viewFull")}
             <ArrowRight
               size={18}
               className="group-hover:translate-x-1 transition-transform"
@@ -129,10 +131,10 @@ export default function TopCreatorsSection() {
         ) : creators.length === 0 ? (
           <div className="border-3 border-black bg-white">
             <EmptyState
-              title="No creators yet"
-              description="Be the first to tip someone and start the leaderboard!"
+              title={t("landing.top.emptyTitle")}
+              description={t("landing.top.emptyDescription")}
               action={{
-                label: "Find Creators",
+                label: t("landing.top.emptyAction"),
                 onClick: () => navigate("/leaderboard"),
               }}
             />

@@ -101,7 +101,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
           ref={menuRef}
           role="dialog"
           aria-modal="true"
-          aria-label="Navigation menu"
+          aria-label={t("nav.navigation")}
           initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -16 }}
@@ -118,14 +118,14 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                 type="button"
                 onClick={onClose}
                 className="inline-flex items-center justify-center border-2 border-black bg-white p-2 dark:border-white dark:bg-black"
-                aria-label="Close navigation menu"
+                aria-label={t("nav.closeMenu")}
               >
                 <X size={18} />
               </button>
             </div>
 
             {/* Nav links */}
-            <nav aria-label="Mobile navigation">
+            <nav aria-label={t("nav.mobile")}>
               <ul className="flex flex-col gap-3">
                 <li>
                   <Link
@@ -143,7 +143,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                 </li>
                 <li>
                   <Link to="/transactions" onClick={onClose} className={`${navLinkClass} block`}>
-                    Transactions
+                    {t("nav.transactions")}
                   </Link>
                 </li>
                 <li>
@@ -165,7 +165,9 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                   onClick={toggleTheme}
                   className="inline-flex items-center justify-center border-2 border-black bg-white p-2 transition-opacity hover:opacity-60 dark:border-white dark:bg-black"
                   style={{ boxShadow: shadow }}
-                  aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+                  aria-label={t("theme.switchTo", {
+                    mode: theme === "light" ? t("common.dark") : t("common.light"),
+                  })}
                 >
                   {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
                 </button>
@@ -183,7 +185,9 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                 onClick={onKeyboardShortcuts}
                 className="flex items-center justify-between border-2 border-black bg-white px-3 py-2 text-xs font-bold uppercase dark:border-white dark:bg-black dark:text-white"
               >
-                Keyboard shortcuts ({getModifierKey()} + /)
+                {t("shortcuts.keyboard", {
+                  shortcut: `${getModifierKey()} + /`,
+                })}
                 <Keyboard size={16} />
               </button>
 

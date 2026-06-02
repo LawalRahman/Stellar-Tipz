@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
 import { HeartHandshake, Repeat, Settings, Wallet } from "lucide-react";
 
 import PageContainer from "@/components/layout/PageContainer";
@@ -15,7 +14,6 @@ import { useContract } from "@/hooks/useContract";
 import { useSubscriptionStore } from "@/store/subscriptionStore";
 import { useToastStore } from "@/store/toastStore";
 import { Subscription } from "@/types/contract";
-import { stroopToXlm } from "@/helpers/format";
 import { categorizeError } from "@/helpers/error";
 import SubscriptionCard from "./SubscriptionCard";
 
@@ -34,7 +32,6 @@ const SubscribePage: React.FC = () => {
     loading: storeLoading,
     error,
     setSubscriptions,
-    addSubscription,
     setLoading,
     setError,
   } = useSubscriptionStore();
@@ -55,11 +52,11 @@ const SubscribePage: React.FC = () => {
       const active = (subs || []).filter((s: Subscription) => s.active);
       setSubscriptions(active);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load subscriptions");
+      setError(err instanceof Error ? err.message : t("subs.lookupFailed"));
     } finally {
       setLoading(false);
     }
-  }, [publicKey, getSubscriptions, setSubscriptions, setLoading, setError]);
+  }, [publicKey, getSubscriptions, setSubscriptions, setLoading, setError, t]);
 
   useEffect(() => {
     fetchSubscriptions();
@@ -80,7 +77,7 @@ const SubscribePage: React.FC = () => {
 
     setIsCreating(true);
     try {
-      const txHash = await createSubscription(creatorAddress, amount, frequencyDays);
+      await createSubscription(creatorAddress, amount, frequencyDays);
       addToast({
         message: t("subs.createSuccess"),
         type: "success",
@@ -92,7 +89,7 @@ const SubscribePage: React.FC = () => {
       await fetchSubscriptions();
     } catch (err) {
       addToast({
-        message: err instanceof Error ? err.message : "Failed to create subscription",
+        message: err instanceof Error ? err.message : t("subs.createFailed"),
         type: "error",
       });
     } finally {
@@ -104,12 +101,12 @@ const SubscribePage: React.FC = () => {
     return (
       <PageContainer maxWidth="lg" className="space-y-8 py-10">
         <Breadcrumbs
-          items={[{ label: "Home", href: "/" }, { label: t("subs.title") }]}
+          items={[{ label: t("subs.home"), href: "/" }, { label: t("subs.title") }]}
         />
         <section className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.25em] text-gray-800 dark:text-gray-200">
-              Recurring support
+              {t("subs.recurringSupport")}
             </p>
             <h1 className="mt-2 flex items-center gap-3 text-4xl font-black uppercase">
               <Repeat size={32} />
@@ -120,8 +117,8 @@ const SubscribePage: React.FC = () => {
         </section>
         <EmptyState
           icon={<Wallet />}
-          title="Connect your wallet"
-          description="Connect a Stellar wallet to manage recurring tips."
+          title={t("subs.connectTitle")}
+          description={t("subs.connectDescription")}
         />
       </PageContainer>
     );
@@ -141,7 +138,7 @@ const SubscribePage: React.FC = () => {
   return (
     <PageContainer maxWidth="lg" className="space-y-8 py-10">
       <Breadcrumbs
-        items={[{ label: "Home", href: "/" }, { label: t("subs.title") }]}
+        items={[{ label: t("subs.home"), href: "/" }, { label: t("subs.title") }]}
       />
       <section
         aria-labelledby="subscriptions-heading"
@@ -149,7 +146,7 @@ const SubscribePage: React.FC = () => {
       >
         <div>
           <p className="text-xs font-black uppercase tracking-[0.25em] text-gray-800 dark:text-gray-200">
-            Recurring support
+            {t("subs.recurringSupport")}
           </p>
           <h1
             id="subscriptions-heading"
@@ -174,7 +171,7 @@ const SubscribePage: React.FC = () => {
           className="flex items-center gap-2 text-xl font-black uppercase"
         >
           <Settings size={20} />
-          Set Up Recurring Tip
+          {t("subs.newHeading")}
         </h2>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

@@ -7,6 +7,7 @@ import AmountDisplay from './AmountDisplay';
 import Skeleton from '../ui/Skeleton';
 import { useFavorites } from '../../hooks/useFavorites';
 import { useRenderCount } from '../../hooks/useRenderCount';
+import { useI18n } from '@/i18n';
 
 interface ProfileCardProps {
   handle: string;
@@ -31,6 +32,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   streak,
   dataTourId,
 }) => {
+  const { t } = useI18n();
   useRenderCount("ProfileCard", publicKey);
   const { isFavorite, toggleFavorite } = useFavorites();
   const favorite = useMemo(
@@ -68,7 +70,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
                 className={`p-1.5 rounded-full transition-colors ${
                   favorite ? 'text-red-500 bg-red-50' : 'text-gray-700 dark:text-gray-300 hover:text-red-500 hover:bg-gray-100'
                 }`}
-                aria-label={favorite ? "Remove from favorites" : "Add to favorites"}
+                aria-label={favorite ? t("profile.removeFavorite") : t("profile.addFavorite")}
               >
                 <Heart size={18} fill={favorite ? "currentColor" : "none"} />
               </button>
@@ -88,7 +90,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             )}
             {streak !== undefined && (
               <p className="mt-1 text-xs font-bold uppercase tracking-wide text-gray-600">
-                Streak: {streak} days
+                {t("profile.streak", { count: streak })}
               </p>
             )}
           </div>
@@ -98,7 +100,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             onClick={onTip}
             className="w-full py-2 bg-black text-white text-xs font-black uppercase tracking-wider border-2 border-black hover:bg-gray-800 transition-colors"
           >
-            View Profile
+            {t("profile.viewProfile")}
           </button>
         </div>
       </Card>
@@ -113,7 +115,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           className={`absolute top-4 right-4 p-2 rounded-full bg-white/20 backdrop-blur-md transition-colors ${
             favorite ? 'text-red-500' : 'text-white hover:text-red-500 hover:bg-white/40'
           }`}
-          aria-label={favorite ? "Remove from favorites" : "Add to favorites"}
+          aria-label={favorite ? t("profile.removeFavorite") : t("profile.addFavorite")}
         >
           <Heart size={20} fill={favorite ? "currentColor" : "none"} />
         </button>
@@ -143,14 +145,14 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           </a>
         </div>
         <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed mb-6">
-          {bio || "This creator hasn't added a bio yet. Support their work by sending a tip!"}
+          {bio || t("profile.bioFallback")}
         </p>
         <button
           data-tour-id={dataTourId}
           onClick={onTip}
           className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors shadow-sm"
         >
-          Send Tip
+          {t("profile.sendTip")}
         </button>
       </div>
     </div>

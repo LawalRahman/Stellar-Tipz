@@ -25,7 +25,7 @@ const LandingPage: React.FC = () => {
     <main
       id="main-content"
       tabIndex={-1}
-      aria-label="Landing page content"
+      aria-label={t("landing.aria")}
       className="min-h-screen bg-white focus:outline-none"
     >
       <HeroSection />
@@ -35,7 +35,7 @@ const LandingPage: React.FC = () => {
       <section
         id="how-it-works"
         role="region"
-        aria-label="How it works"
+        aria-label={t("landing.how.aria")}
       >
         <HowItWorksSection />
       </section>

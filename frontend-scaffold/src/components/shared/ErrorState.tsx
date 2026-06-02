@@ -14,8 +14,9 @@ import {
 } from "lucide-react";
 import Card from "../ui/Card";
 import Button from "../ui/Button";
-import { ERRORS, ErrorCategory } from "@/helpers/error";
+import { ErrorCategory } from "@/helpers/error";
 import { useNavigate } from "react-router-dom";
+import { useI18n } from "@/i18n";
 
 interface ErrorStateProps {
   message?: string;
@@ -40,6 +41,7 @@ const ErrorState: React.FC<ErrorStateProps> = ({
   error,
   errorInfo,
 }) => {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [showErrorDetails, setShowErrorDetails] = useState(false);
   const getContent = () => {
@@ -52,8 +54,8 @@ const ErrorState: React.FC<ErrorStateProps> = ({
               <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 border border-black" />
             </div>
           ),
-          title: "Connection Lost",
-          defaultMessage: ERRORS.NETWORK,
+          title: t("error.connectionLost"),
+          defaultMessage: t("error.networkMessage"),
         };
       case "not-found":
         return {
@@ -63,14 +65,14 @@ const ErrorState: React.FC<ErrorStateProps> = ({
               <span className="absolute -bottom-1 -right-1 text-lg">404</span>
             </div>
           ),
-          title: "Page Not Found",
-          defaultMessage: ERRORS.NOT_FOUND,
+          title: t("error.pageNotFound"),
+          defaultMessage: t("error.notFoundMessage"),
         };
       case "wallet":
         return {
           icon: <WalletCards className="text-orange-600" size={48} strokeWidth={1.5} />,
-          title: "Wallet Not Found",
-          defaultMessage: ERRORS.WALLET,
+          title: t("error.walletNotFound"),
+          defaultMessage: t("error.walletMessage"),
         };
       case "contract":
         return {
@@ -80,20 +82,20 @@ const ErrorState: React.FC<ErrorStateProps> = ({
               <span className="absolute -bottom-1 -right-1 text-xs font-black text-red-600">!</span>
             </div>
           ),
-          title: "Something went wrong",
-          defaultMessage: ERRORS.CONTRACT,
+          title: t("error.somethingWrong"),
+          defaultMessage: t("error.contractMessage"),
         };
       case "timeout":
         return {
           icon: <Clock className="text-yellow-600" size={48} strokeWidth={1.5} />,
-          title: "Request Timed Out",
-          defaultMessage: "The request timed out. Please try again.",
+          title: t("error.requestTimedOut"),
+          defaultMessage: t("error.requestTimedOutMessage"),
         };
       case "validation":
         return {
           icon: <AlertCircle className="text-orange-500" size={48} strokeWidth={1.5} />,
-          title: "Invalid Input",
-          defaultMessage: "Please check your input and try again.",
+          title: t("error.invalidInput"),
+          defaultMessage: t("error.invalidInputMessage"),
         };
       case "rate-limited":
         return {
@@ -103,15 +105,15 @@ const ErrorState: React.FC<ErrorStateProps> = ({
               <span className="absolute -bottom-1 -right-1 text-xs font-black text-purple-600">429</span>
             </div>
           ),
-          title: "Too Many Requests",
-          defaultMessage: ERRORS.RATE_LIMITED,
+          title: t("error.tooManyRequests"),
+          defaultMessage: t("error.rateLimitedMessage"),
         };
       case "unknown":
       default:
         return {
           icon: <AlertCircle className="text-gray-600" size={48} strokeWidth={1.5} />,
-          title: "Unexpected Error",
-          defaultMessage: "An unexpected error occurred. Please try again.",
+          title: t("error.unexpected"),
+          defaultMessage: t("error.unexpectedMessage"),
         };
     }
   };
@@ -156,14 +158,14 @@ const ErrorState: React.FC<ErrorStateProps> = ({
               className="w-full flex items-center justify-center gap-2"
             >
               <RefreshCcw size={18} />
-              Try Again
+              {t("common.tryAgain")}
             </Button>
           )}
 
           {category === "wallet" && (
             <div className="space-y-2 pt-2 border-t border-gray-200">
               <p className="text-xs font-black uppercase tracking-wide text-gray-500">
-                Install a wallet
+                {t("error.installWallet")}
               </p>
               <div className="flex flex-wrap justify-center gap-2">
                 {WALLET_INSTALLS.map((w) => (
@@ -189,7 +191,7 @@ const ErrorState: React.FC<ErrorStateProps> = ({
             className="w-full flex items-center justify-center gap-2"
           >
             <Home size={18} />
-            Go Home
+            {t("common.goHome")}
           </Button>
         </div>
 
@@ -202,7 +204,7 @@ const ErrorState: React.FC<ErrorStateProps> = ({
               className="w-full flex items-center justify-center gap-2 text-sm"
             >
               <Bug size={16} />
-              Error Details
+              {t("common.errorDetails")}
               {showErrorDetails ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </Button>
 
@@ -210,14 +212,14 @@ const ErrorState: React.FC<ErrorStateProps> = ({
               <div className="mt-4 text-left bg-gray-50 border border-gray-300 rounded p-4">
                 <div className="space-y-2">
                   <div>
-                    <strong>Error:</strong>
+                    <strong>{t("common.error")}</strong>
                     <pre className="text-xs text-red-600 mt-1 whitespace-pre-wrap">
                       {error.message}
                     </pre>
                   </div>
                   {error.stack && (
                     <div>
-                      <strong>Stack Trace:</strong>
+                      <strong>{t("common.stackTrace")}</strong>
                       <pre className="text-xs text-gray-600 mt-1 whitespace-pre-wrap">
                         {error.stack}
                       </pre>
@@ -225,7 +227,7 @@ const ErrorState: React.FC<ErrorStateProps> = ({
                   )}
                   {errorInfo?.componentStack && (
                     <div>
-                      <strong>Component Stack:</strong>
+                      <strong>{t("common.componentStack")}</strong>
                       <pre className="text-xs text-blue-600 mt-1 whitespace-pre-wrap">
                         {errorInfo.componentStack}
                       </pre>

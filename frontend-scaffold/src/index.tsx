@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 
 import App from "./App";
-import { I18nProvider } from "./i18n";
+import { I18nProvider, useI18n } from "./i18n";
 import { logger } from "./services/logger";
 import { validateEnv } from "./helpers/env";
 import { initSentry } from "./services/sentry";
@@ -29,6 +29,7 @@ type BeforeInstallPromptEvent = Event & {
 };
 
 function InstallPromptBanner() {
+  const { t } = useI18n();
   const [deferredPrompt, setDeferredPrompt] = React.useState<BeforeInstallPromptEvent | null>(null);
   const [visible, setVisible] = React.useState(false);
 
@@ -54,9 +55,11 @@ function InstallPromptBanner() {
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <p className="text-xs font-black uppercase tracking-[0.25em] text-gray-600">Install</p>
+          <p className="text-xs font-black uppercase tracking-[0.25em] text-gray-600">
+            {t("install.title")}
+          </p>
           <p className="text-sm font-bold text-gray-800">
-            Install Stellar Tipz for a faster, app-like experience.
+            {t("install.description")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -80,14 +83,14 @@ function InstallPromptBanner() {
               setDeferredPrompt(null);
             }}
           >
-            Install
+            {t("install.install")}
           </button>
           <button
             type="button"
             className="border-2 border-black bg-white px-4 py-2 text-xs font-black uppercase tracking-wide"
             onClick={() => setVisible(false)}
           >
-            Not now
+            {t("install.notNow")}
           </button>
         </div>
       </div>
@@ -96,6 +99,8 @@ function InstallPromptBanner() {
 }
 
 function OfflineScreen() {
+  const { t } = useI18n();
+
   return (
     <div
       className="min-h-screen bg-off-white p-6"
@@ -105,9 +110,9 @@ function OfflineScreen() {
       aria-atomic="true"
     >
       <div className="mx-auto max-w-2xl border-4 border-black bg-white p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-        <h1 className="text-3xl font-black uppercase">Offline</h1>
+        <h1 className="text-3xl font-black uppercase">{t("offline.title")}</h1>
         <p className="mt-3 text-sm font-bold text-gray-700">
-          You appear to be offline. Reconnect to continue using live features.
+          {t("offline.description")}
         </p>
       </div>
     </div>

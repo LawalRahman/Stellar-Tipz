@@ -22,10 +22,17 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
   const { cancelSubscription, executeDueSubscription, loading } = useContract();
   const { removeSubscription, processingId } = useSubscriptionStore();
   const addToast = useToastStore((s) => s.addToast);
+  const [now, setNow] = React.useState(0);
+
+  React.useEffect(() => {
+    const updateNow = () => setNow(Math.floor(Date.now() / 1000));
+    updateNow();
+    const intervalId = window.setInterval(updateNow, 60000);
+    return () => window.clearInterval(intervalId);
+  }, []);
 
   const xlmAmount = stroopToXlm(subscription.amount);
   const isProcessing = processingId === subscription.creator;
-  const now = Math.floor(Date.now() / 1000);
   const isDue = now >= subscription.nextDue;
   const daysUntilDue = Math.max(
     0,
@@ -48,7 +55,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
       });
     } catch (err) {
       addToast({
-        message: err instanceof Error ? err.message : "Failed to cancel subscription",
+        message: err instanceof Error ? err.message : t("subs.cancelFailed"),
         type: "error",
       });
     }
@@ -64,7 +71,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
       });
     } catch (err) {
       addToast({
-        message: err instanceof Error ? err.message : "Failed to process recurring tip",
+        message: err instanceof Error ? err.message : t("subs.tipProcessFailed"),
         type: "error",
       });
     }

@@ -1,38 +1,39 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Wallet, User, Link, Zap } from 'lucide-react';
+import { useI18n } from '@/i18n';
 
 interface Step {
   number: number;
   icon: React.ReactNode;
-  title: string;
-  description: string;
+  titleKey: string;
+  descriptionKey: string;
 }
 
 const steps: Step[] = [
   {
     number: 1,
     icon: <Wallet className="w-6 h-6" />,
-    title: 'Connect your Stellar wallet',
-    description: 'Link your Freighter or other Stellar wallet to get started in seconds.',
+    titleKey: 'landing.how.step1.title',
+    descriptionKey: 'landing.how.step1.description',
   },
   {
     number: 2,
     icon: <User className="w-6 h-6" />,
-    title: 'Register your profile',
-    description: 'Create your unique creator profile with a custom username and bio.',
+    titleKey: 'landing.how.step2.title',
+    descriptionKey: 'landing.how.step2.description',
   },
   {
     number: 3,
     icon: <Link className="w-6 h-6" />,
-    title: 'Share your tip link',
-    description: 'Share your personalized tip link on social media, streams, or anywhere.',
+    titleKey: 'landing.how.step3.title',
+    descriptionKey: 'landing.how.step3.description',
   },
   {
     number: 4,
     icon: <Zap className="w-6 h-6" />,
-    title: 'Receive XLM tips!',
-    description: 'Supporters send XLM tips directly to your wallet — instant and fee-free.',
+    titleKey: 'landing.how.step4.title',
+    descriptionKey: 'landing.how.step4.description',
   },
 ];
 
@@ -50,6 +51,8 @@ const stepVariants = {
 };
 
 const HowItWorksSection: React.FC = () => {
+  const { t } = useI18n();
+
   return (
     <section aria-labelledby="how-it-works-heading" className="py-20 px-4 bg-gray-50">
       <div className="max-w-6xl mx-auto">
@@ -61,7 +64,7 @@ const HowItWorksSection: React.FC = () => {
           viewport={{ once: true }}
           transition={{ duration: 0.4 }}
         >
-          HOW IT WORKS
+          {t("landing.how.heading")}
         </motion.h2>
         <motion.p
           className="text-gray-800 dark:text-gray-200 text-center mb-16 max-w-xl mx-auto"
@@ -70,7 +73,7 @@ const HowItWorksSection: React.FC = () => {
           viewport={{ once: true }}
           transition={{ duration: 0.4, delay: 0.1 }}
         >
-          Start receiving tips in four simple steps
+          {t("landing.how.description")}
         </motion.p>
 
         {/* Desktop: horizontal layout */}
@@ -93,9 +96,9 @@ const HowItWorksSection: React.FC = () => {
                     {step.icon}
                   </div>
                 </div>
-                <h3 className="font-semibold text-lg mb-2">{step.title}</h3>
+                <h3 className="font-semibold text-lg mb-2">{t(step.titleKey)}</h3>
                 <p className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed max-w-[200px]">
-                  {step.description}
+                  {t(step.descriptionKey)}
                 </p>
               </motion.div>
 
@@ -138,9 +141,9 @@ const HowItWorksSection: React.FC = () => {
                 )}
               </div>
               <div className="pt-1">
-                <h3 className="font-semibold text-base mb-1">{step.title}</h3>
+                <h3 className="font-semibold text-base mb-1">{t(step.titleKey)}</h3>
                 <p className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed">
-                  {step.description}
+                  {t(step.descriptionKey)}
                 </p>
               </div>
             </motion.div>

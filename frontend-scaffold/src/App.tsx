@@ -22,18 +22,26 @@ import OnboardingTour from "@/features/onboarding/OnboardingTour";
 import { onUpdateAvailable, skipWaiting } from "@/services/serviceWorker";
 
 const PageFallback: React.FC = () => (
-  <div
-    className="flex items-center justify-center min-h-[400px]"
-    role="status"
-    aria-live="polite"
-    aria-busy="true"
-  >
-    <div className="text-center">
-      <div className="mb-4 h-8 w-8 border-4 border-gray-300 border-t-black rounded-full animate-spin mx-auto"></div>
-      <p className="text-gray-600">Loading page...</p>
-    </div>
-  </div>
+  <PageFallbackContent />
 );
+
+const PageFallbackContent: React.FC = () => {
+  const { t } = useI18n();
+
+  return (
+    <div
+      className="flex items-center justify-center min-h-[400px]"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <div className="text-center">
+        <div className="mb-4 h-8 w-8 border-4 border-gray-300 border-t-black rounded-full animate-spin mx-auto"></div>
+        <p className="text-gray-600">{t("app.loadingPage")}</p>
+      </div>
+    </div>
+  );
+};
 
 const AppRoutes: React.FC = () => {
   const routeElements = useRoutes(routes);
@@ -42,7 +50,6 @@ const AppRoutes: React.FC = () => {
   const reduceMotion = useReducedMotion();
   useAnalytics();
   const [updateReady, setUpdateReady] = React.useState(false);
-  const skipLinkText = t("app.skipToMain");
 
   React.useEffect(() => {
     const unsub = onUpdateAvailable(() => setUpdateReady(true));
@@ -64,7 +71,7 @@ const AppRoutes: React.FC = () => {
             aria-live="polite"
             className="sticky top-0 z-50 flex items-center justify-center gap-2 border-b-4 border-black bg-yellow-300 px-4 py-2 text-sm font-black uppercase tracking-wide"
           >
-            <span>Offline – you are browsing cached content</span>
+            <span>{t("app.offlineBanner")}</span>
           </div>
         )}
         {updateReady && (
@@ -73,13 +80,13 @@ const AppRoutes: React.FC = () => {
             aria-live="polite"
             className="sticky top-0 z-50 flex items-center justify-between gap-2 border-b-4 border-black bg-blue-200 px-4 py-2 text-sm font-black uppercase tracking-wide"
           >
-            <span>Update available</span>
+            <span>{t("app.updateAvailable")}</span>
             <button
               type="button"
               className="border-2 border-black bg-black px-3 py-1 text-xs font-black uppercase text-white"
               onClick={() => void skipWaiting()}
             >
-              Reload now
+              {t("app.reloadNow")}
             </button>
           </div>
         )}
@@ -88,7 +95,7 @@ const AppRoutes: React.FC = () => {
             href="#main-content"
             className="sr-only focus:not-sr-only focus:absolute focus:top-0 focus:left-0 focus:z-50 focus:bg-black focus:text-white focus:px-4 focus:py-2 focus:font-black focus:outline-none"
           >
-            {skipLinkText === "app.skipToMain" ? "Skip to content" : skipLinkText}
+            {t("app.skipToMain")}
           </a>
           <Header />
           <div className="flex-1">

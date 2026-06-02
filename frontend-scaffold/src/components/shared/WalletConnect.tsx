@@ -8,13 +8,15 @@ import { SUPPORTED_WALLETS } from '../../hooks/useWallet';
 import { truncateAddress } from '../../services';
 import Modal from '../ui/Modal';
 import { HelpCircle, Download, CheckCircle2, Wallet } from 'lucide-react';
+import { useI18n } from '@/i18n';
 
 interface WalletConnectProps {
   className?: string;
 }
 
 const WalletConnect: React.FC<WalletConnectProps> = ({ className }) => {
-  const { publicKey, connected, connecting, error, walletError, connect, disconnect } = useWallet();
+  const { t } = useI18n();
+  const { publicKey, connected, connecting, error, walletError, connect, disconnect, setError } = useWallet();
   const { profile } = useProfile();
   const [showModal, setShowModal] = React.useState(false);
   const [isDisconnectDialogOpen, setIsDisconnectDialogOpen] = React.useState(false);
@@ -34,7 +36,7 @@ const WalletConnect: React.FC<WalletConnectProps> = ({ className }) => {
           </span>
         </div>
         <Button variant="outline" size="sm" onClick={() => setIsDisconnectDialogOpen(true)}>
-          Disconnect
+          {t("wallet.disconnect")}
         </Button>
       </div>
     );
@@ -48,7 +50,7 @@ const WalletConnect: React.FC<WalletConnectProps> = ({ className }) => {
         loading={connecting}
         className={className}
       >
-        {connecting ? 'Connecting...' : 'Connect Wallet'}
+        {connecting ? t("wallet.connecting") : t("wallet.connect")}
       </Button>
 
       {walletError ? (

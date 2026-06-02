@@ -5,9 +5,9 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Card } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
-import { Loader } from '../../components/ui/Loader';
+import Card from '../../components/ui/Card';
+import Badge from '../../components/ui/Badge';
+import Loader from '../../components/ui/Loader';
 
 interface BuildInfo {
   version: string;
@@ -22,7 +22,7 @@ interface HealthStatus {
   lastChecked: string;
 }
 
-export function HealthPage() {
+const HealthPage = () => {
   const [buildInfo] = useState<BuildInfo>({
     version: import.meta.env.VITE_APP_VERSION || '1.0.0',
     environment: import.meta.env.MODE || 'development',
@@ -166,4 +166,6 @@ export function HealthPage() {
       </Card>
     </div>
   );
-}
+};
+
+export default HealthPage;
