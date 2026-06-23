@@ -23,6 +23,7 @@ model User {
 
   profile              Profile?
   leaderboardSnapshots LeaderboardSnapshot[]
+  streak               Streak?
 }
 
 /// Creator's public-facing profile page.
@@ -82,4 +83,16 @@ model LeaderboardSnapshot {
   user      User     @relation(fields: [userId], references: [id])
   totalTips BigInt
   createdAt DateTime @default(now())
+}
+
+/// Per-user tipping streak tracking. One row per user (userId is unique).
+model Streak {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id])
+  currentStreak Int       @default(0)
+  longestStreak Int       @default(0)
+  lastTipDate   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
