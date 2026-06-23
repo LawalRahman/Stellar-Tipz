@@ -15,11 +15,25 @@ datasource db {
 /// A creator/user identified by their Stellar wallet address.
 /// Extended by profile, credit, tips and other modules in later issues.
 model User {
-  id            String   @id @default(cuid())
-  stellarAddress String  @unique
-  username      String?  @unique
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id             String   @id @default(cuid())
+  stellarAddress String   @unique
+  username       String?  @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  apiKeys        ApiKey[]
+}
+
+/// API key for service/admin access and webhook integrations.
+model ApiKey {
+  id          String   @id @default(cuid())
+  hashedKey   String   @unique
+  scopes      String[]
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([createdById])
 }
 
 /// On-chain tip mirrored off-chain by the indexer.
