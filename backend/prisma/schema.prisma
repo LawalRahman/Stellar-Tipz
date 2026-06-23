@@ -13,13 +13,38 @@ datasource db {
 }
 
 /// A creator/user identified by their Stellar wallet address.
-/// Extended by profile, credit, tips and other modules in later issues.
+/// Extended by credit, tips and other modules in later issues.
 model User {
   id            String   @id @default(cuid())
   stellarAddress String  @unique
   username      String?  @unique
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  profile              Profile?
+  leaderboardSnapshots LeaderboardSnapshot[]
+  streak               Streak?
+}
+
+/// Creator's public-facing profile page.
+/// Display content lives here; on-chain stats (credit_score, tips_received, etc.)
+/// belong on a separate stats/metrics model added in a later issue.
+model Profile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+
+  displayName String?
+  avatarUrl   String?
+  bio         String?
+  website     String?
+  xHandle     String?
+  bannerUrl   String?
+  githubHandle String?
+  themeKey    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 /// On-chain tip mirrored off-chain by the indexer.
@@ -33,11 +58,42 @@ model Tip {
   amountStroops BigInt
   message      String?
   createdAt    DateTime @default(now())
+  refund       Refund?
 }
 
-/// Tracks indexer progress so it can resume after a restart.
+/// Tracks indexer progress per event topic so it can resume after a restart.
 model IndexerCursor {
-  id          String   @id @default("default")
+  topic       String   @id
   lastLedger  Int
   updatedAt   DateTime @updatedAt
+}
+
+/// Leaderboard period tracked by snapshots.
+enum Period {
+  WEEKLY
+  MONTHLY
+  ALL_TIME
+}
+
+/// Periodic leaderboard snapshot entry for fast reads and historical ranking.
+model LeaderboardSnapshot {
+  id        String   @id @default(cuid())
+  period    Period
+  rank      Int
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  totalTips BigInt
+  createdAt DateTime @default(now())
+}
+
+/// Per-user tipping streak tracking. One row per user (userId is unique).
+model Streak {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id])
+  currentStreak Int       @default(0)
+  longestStreak Int       @default(0)
+  lastTipDate   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
