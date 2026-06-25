@@ -14,17 +14,17 @@ import { authMiddleware } from './auth.middleware.js';
  */
 export const authRouter = Router();
 
-// POST /auth/challenge - Create authentication challenge
+// POST /auth/challenge — create authentication challenge
 authRouter.post('/challenge', challengeController);
 
-// POST /auth/verify - Verify signed challenge and get tokens
+// POST /auth/verify — verify signed challenge and get tokens
 authRouter.post('/verify', verifyController);
 
-// GET /auth/me - Get current user info (requires auth)
+// GET /auth/me — get current user profile summary (requires auth)
 authRouter.get('/me', authMiddleware, meController);
 
-// POST /auth/refresh - Refresh access token
+// POST /auth/refresh — refresh access token
 authRouter.post('/refresh', refreshController);
 
-// POST /auth/logout - Revoke refresh token
+// POST /auth/logout — revoke refresh token
 authRouter.post('/logout', logoutController);

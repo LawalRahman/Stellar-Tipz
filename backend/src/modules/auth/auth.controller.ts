@@ -1,25 +1,21 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { BadRequestError } from '../../common/errors/AppError.js';
-import { prisma } from '../../db/prisma.js';
+import { BadRequestError, NotFoundError } from '@/common/errors/AppError.js';
+import { prisma } from '@/db/prisma.js';
 import {
   createChallenge,
   verifyChallenge,
   refreshToken as refreshTokens,
   revokeRefreshToken,
 } from './auth.service.js';
-import {
-  challengeSchema,
-  verifySchema,
-  refreshSchema,
-} from './auth.schema.js';
+import { challengeSchema, verifySchema, refreshSchema } from './auth.schema.js';
 import type { AuthPayload } from './auth.types.js';
 
 /**
  * POST /auth/challenge
  * Creates an authentication challenge for a Stellar wallet address.
  */
-export async function challengeController(req: Request, res: Response, next: NextFunction) {
+export async function challengeController(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { stellarAddress } = challengeSchema.parse(req.body);
     const response = await createChallenge(stellarAddress);
@@ -37,7 +33,7 @@ export async function challengeController(req: Request, res: Response, next: Nex
  * POST /auth/verify
  * Verifies a signed challenge and returns JWT tokens.
  */
-export async function verifyController(req: Request, res: Response, next: NextFunction) {
+export async function verifyController(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { stellarAddress, signature, challenge } = verifySchema.parse(req.body);
     const tokens = await verifyChallenge(stellarAddress, signature, challenge);
@@ -53,9 +49,10 @@ export async function verifyController(req: Request, res: Response, next: NextFu
 
 /**
  * GET /auth/me
- * Returns the current authenticated user's information.
+ * Returns the current authenticated user's profile summary.
+ * Requires: authMiddleware (populates req.auth).
  */
-export async function meController(req: Request, res: Response, next: NextFunction) {
+export async function meController(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const auth = req.auth as AuthPayload;
     const user = await prisma.user.findUnique({
@@ -69,14 +66,16 @@ export async function meController(req: Request, res: Response, next: NextFuncti
     });
 
     if (!user) {
-      throw new BadRequestError('User not found');
+      throw new NotFoundError('User not found');
     }
 
     res.json({
-      id: user.id,
-      stellarAddress: user.stellarAddress,
-      username: user.username,
-      createdAt: user.createdAt.toISOString(),
+      data: {
+        id: user.id,
+        stellarAddress: user.stellarAddress,
+        username: user.username,
+        createdAt: user.createdAt.toISOString(),
+      },
     });
   } catch (error) {
     next(error);
@@ -87,7 +86,7 @@ export async function meController(req: Request, res: Response, next: NextFuncti
  * POST /auth/refresh
  * Refreshes an access token using a refresh token.
  */
-export async function refreshController(req: Request, res: Response, next: NextFunction) {
+export async function refreshController(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { refreshToken } = refreshSchema.parse(req.body);
     const tokens = await refreshTokens(refreshToken);
@@ -105,7 +104,7 @@ export async function refreshController(req: Request, res: Response, next: NextF
  * POST /auth/logout
  * Revokes the current refresh token.
  */
-export async function logoutController(req: Request, res: Response, next: NextFunction) {
+export async function logoutController(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { refreshToken } = refreshSchema.parse(req.body);
     await revokeRefreshToken(refreshToken);

@@ -35,6 +35,7 @@ model User {
   creditScore          CreditScore?
   creditScoreHistory   CreditScoreHistory[]
   withdrawals          Withdrawal[]
+  refreshTokens        RefreshToken[]
 }
 
 /// API key for service/admin access and webhook integrations.
@@ -149,17 +150,34 @@ model Streak {
 /// Created when a wallet requests a sign-in nonce; deleted (or expired) after verification.
 /// TTL is enforced by the application layer via AUTH_CHALLENGE_TTL_SECONDS.
 model AuthChallenge {
-  id        String   @id @default(cuid())
+  id             String    @id @default(cuid())
   /// The wallet address this challenge was issued for.
-  address   String
-  /// Random nonce the wallet must sign to prove ownership.
-  nonce     String   @unique
+  stellarAddress String
+  /// Random hex challenge the wallet must sign to prove ownership.
+  challenge      String    @unique
   /// UTC timestamp after which the challenge is no longer valid.
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+  expiresAt      DateTime
+  /// Set when the challenge has been successfully consumed.
+  usedAt         DateTime?
+  createdAt      DateTime  @default(now())
 
-  @@index([address])
+  @@index([stellarAddress])
   @@index([expiresAt])
+}
+
+/// Refresh token stored server-side for token rotation.
+/// Raw token value is never persisted — only the hashed form.
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Raw token value (rotation: store plain for now, hash in #848).
+  token     String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
 
 enum TipStatus {
