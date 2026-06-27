@@ -30,16 +30,14 @@ function toProfile(user: {
   };
 }
 
-const reservedSet = new Set<string>(reservedUsernames);
-
-export function validateUsername(username: string): void {
-  const result = usernameSchema.safeParse(username);
-  if (!result.success) {
-    throw new BadRequestError(result.error.errors[0].message);
-  }
-  if (reservedSet.has(username)) {
-    throw new BadRequestError(`Username "${username}" is reserved`);
-  }
+export async function checkUsernameAvailability(username: string): Promise<{ available: boolean }> {
+  const user = await prisma.user.findFirst({
+    where: {
+      username: { equals: username, mode: 'insensitive' },
+      deletedAt: null,
+    },
+  });
+  return { available: !user };
 }
 
 export async function getProfileByAddress(address: string): Promise<ProfileResult> {
