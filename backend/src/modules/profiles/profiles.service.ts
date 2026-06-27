@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { prisma } from '../../db/prisma.js';
 import { NotFoundError, BadRequestError } from '../../common/errors/AppError.js';
+import { reservedUsernames, usernameSchema } from './profiles.schema.js';
 import { config } from '../../config/index.js';
 
 export interface ProfileResult {
