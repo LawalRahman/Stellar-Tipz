@@ -1,5 +1,3 @@
-
-
 /**
  * Builds and configures the Express application (no listening here — see server.ts).
  *
@@ -23,8 +21,6 @@ export function createApp(): Express {
       },
     }),
   );
-  app.use(cors({ origin: env.CORS_ORIGIN.split(","), credentials: true }));
-  app.use(express.json({ limit: "1mb" }));
   app.use(pinoHttp({ logger }));
 
   const docsPath = `${env.API_BASE_PATH}/docs`;
@@ -44,7 +40,6 @@ export function createApp(): Express {
 
   // ── Feature routers mount here ───────────────────────────────
   app.use(`${env.API_BASE_PATH}/auth`, authRouter);
-  // app.use(`${env.API_BASE_PATH}/tips`, tipsRouter);
   // ... (one issue per module)
   // ─────────────────────────────────────────────────────────────
 

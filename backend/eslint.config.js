@@ -4,8 +4,7 @@
         sourceType: 'module',
       },
       globals: {
-        process: 'readonly',
-
+        process: 'readonly',ips
     rules: {
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
