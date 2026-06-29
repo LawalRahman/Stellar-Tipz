@@ -25,6 +25,7 @@ model User {
   xHandle        String?
   role           String   @default("user")
   scopes         String[] @default([])
+  deletedAt      DateTime?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   apiKeys        ApiKey[]
@@ -33,6 +34,14 @@ model User {
 
   tipperSubscriptions  Subscription[] @relation("SubscriptionTipper")
   creatorSubscriptions Subscription[] @relation("SubscriptionCreator")
+  sentTips             Tip[]                @relation("SentTips")
+  receivedTips         Tip[]                @relation("ReceivedTips")
+  creditScore          CreditScore?
+  creditScoreHistory   CreditScoreHistory[]
+  withdrawals          Withdrawal[]
+  notifications        Notification[]
+  leaderboardSnapshots LeaderboardSnapshot[]
+  streak               Streak?
 }
 
 /// API key for service/admin access and webhook integrations.
@@ -260,4 +269,48 @@ model WebhookDelivery {
 
   @@index([subscriptionId])
   @@index([status, nextAttemptAt])
+}
+
+enum TipStatus {
+  CONFIRMED
+  PENDING
+  REFUNDED
+}
+
+enum WithdrawalStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+}
+
+model CreditScore {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  value      Int
+  computedAt DateTime @default(now())
+}
+
+model CreditScoreHistory {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  value      Int
+  computedAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Withdrawal {
+  id          String           @id @default(cuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount      BigInt
+  fee         BigInt
+  txHash      String?          @unique
+  status      WithdrawalStatus @default(PENDING)
+  requestedAt DateTime         @default(now())
+  confirmedAt DateTime?
+
+  @@index([userId])
 }

@@ -7,6 +7,7 @@ import {
   getProfileByAddress,
   updateProfile,
   listProfiles,
+  deactivateProfile,
 } from "./profiles.service.js";
 import {
   updateProfileSchema,
@@ -105,7 +106,7 @@ export async function getProfileByAddressController(
 }
 
 /**
- * PATCH /profiles/me
+ * PATCH/PUT /profiles/me
  * Updates the authenticated user's profile.
  */
 export async function updateProfileController(
@@ -124,5 +125,23 @@ export async function updateProfileController(
     } else {
       next(error);
     }
+  }
+}
+
+/**
+ * DELETE /profiles/me
+ * Deactivates (soft-deletes) the authenticated user's profile.
+ */
+export async function deactivateProfileController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const auth = req.auth as AuthPayload;
+    await deactivateProfile(auth.userId);
+    res.json({ success: true, message: "Profile deactivated successfully" });
+  } catch (error) {
+    next(error);
   }
 }

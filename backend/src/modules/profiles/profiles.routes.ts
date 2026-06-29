@@ -6,6 +6,7 @@ import {
   getProfileByUsernameController,
   getProfileByAddressController,
   updateProfileController,
+  deactivateProfileController,
 } from "./profiles.controller.js";
 
 /**
@@ -26,3 +27,5 @@ profilesRouter.get("/address/:address", getProfileByAddressController);
  * Protected routes - require authentication
  */
 profilesRouter.patch("/me", requireAuth, updateProfileController);
+profilesRouter.put("/me", requireAuth, updateProfileController);
+profilesRouter.delete("/me", requireAuth, deactivateProfileController);

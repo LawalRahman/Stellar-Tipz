@@ -11,6 +11,35 @@ import type {
 } from "./profiles.types.js";
 
 /**
+ * Helper to fetch aggregate tip stats for a user.
+ */
+async function getTipStats(userId: string): Promise<{ tipsCount: number; totalReceived: string }> {
+  const tipsCount = await prisma.tip.count({
+    where: {
+      recipientId: userId,
+      status: "CONFIRMED",
+    },
+  });
+
+  const aggregate = await prisma.tip.aggregate({
+    where: {
+      recipientId: userId,
+      status: "CONFIRMED",
+    },
+    _sum: {
+      amountStroops: true,
+    },
+  });
+
+  const totalReceived = aggregate._sum.amountStroops?.toString() || "0";
+
+  return {
+    tipsCount,
+    totalReceived,
+  };
+}
+
+/**
  * Gets a profile by user ID.
  */
 export async function getProfileById(userId: string): Promise<ProfileResponse> {
@@ -25,19 +54,30 @@ export async function getProfileById(userId: string): Promise<ProfileResponse> {
       imageUrl: true,
       avatarCid: true,
       xHandle: true,
+      deletedAt: true,
       createdAt: true,
       updatedAt: true,
     },
   });
 
-  if (!user) {
+  if (!user || user.deletedAt !== null) {
     throw new NotFoundError("Profile not found");
   }
 
+  const stats = await getTipStats(user.id);
+
   return {
-    ...user,
+    id: user.id,
+    stellarAddress: user.stellarAddress,
+    username: user.username,
+    displayName: user.displayName,
+    bio: user.bio,
+    imageUrl: user.imageUrl,
+    avatarCid: user.avatarCid,
+    xHandle: user.xHandle,
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt.toISOString(),
+    ...stats,
   };
 }
 
@@ -58,19 +98,30 @@ export async function getProfileByUsername(
       imageUrl: true,
       avatarCid: true,
       xHandle: true,
+      deletedAt: true,
       createdAt: true,
       updatedAt: true,
     },
   });
 
-  if (!user) {
+  if (!user || user.deletedAt !== null) {
     throw new NotFoundError("Profile not found");
   }
 
+  const stats = await getTipStats(user.id);
+
   return {
-    ...user,
+    id: user.id,
+    stellarAddress: user.stellarAddress,
+    username: user.username,
+    displayName: user.displayName,
+    bio: user.bio,
+    imageUrl: user.imageUrl,
+    avatarCid: user.avatarCid,
+    xHandle: user.xHandle,
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt.toISOString(),
+    ...stats,
   };
 }
 
@@ -91,19 +142,30 @@ export async function getProfileByAddress(
       imageUrl: true,
       avatarCid: true,
       xHandle: true,
+      deletedAt: true,
       createdAt: true,
       updatedAt: true,
     },
   });
 
-  if (!user) {
+  if (!user || user.deletedAt !== null) {
     throw new NotFoundError("Profile not found");
   }
 
+  const stats = await getTipStats(user.id);
+
   return {
-    ...user,
+    id: user.id,
+    stellarAddress: user.stellarAddress,
+    username: user.username,
+    displayName: user.displayName,
+    bio: user.bio,
+    imageUrl: user.imageUrl,
+    avatarCid: user.avatarCid,
+    xHandle: user.xHandle,
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt.toISOString(),
+    ...stats,
   };
 }
 
@@ -114,6 +176,15 @@ export async function updateProfile(
   userId: string,
   data: UpdateProfileRequest,
 ): Promise<ProfileResponse> {
+  // Check if profile exists and is active
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user || user.deletedAt !== null) {
+    throw new NotFoundError("Profile not found");
+  }
+
   // Check if username is already taken
   if (data.username) {
     const existingUser = await prisma.user.findUnique({
@@ -145,10 +216,20 @@ export async function updateProfile(
 
     logger.info({ userId }, "Profile updated successfully");
 
+    const stats = await getTipStats(updatedUser.id);
+
     return {
-      ...updatedUser,
+      id: updatedUser.id,
+      stellarAddress: updatedUser.stellarAddress,
+      username: updatedUser.username,
+      displayName: updatedUser.displayName,
+      bio: updatedUser.bio,
+      imageUrl: updatedUser.imageUrl,
+      avatarCid: updatedUser.avatarCid,
+      xHandle: updatedUser.xHandle,
       createdAt: updatedUser.createdAt.toISOString(),
       updatedAt: updatedUser.updatedAt.toISOString(),
+      ...stats,
     };
   } catch (error) {
     logger.error({ userId, error }, "Failed to update profile");
@@ -172,6 +253,7 @@ export async function listProfiles(
 
   const [users, total] = await Promise.all([
     prisma.user.findMany({
+      where: { deletedAt: null },
       skip,
       take: limit,
       select: {
@@ -188,17 +270,54 @@ export async function listProfiles(
       },
       orderBy: { createdAt: "desc" },
     }),
-    prisma.user.count(),
+    prisma.user.count({
+      where: { deletedAt: null },
+    }),
   ]);
 
+  const profiles = await Promise.all(
+    users.map(async (user) => {
+      const stats = await getTipStats(user.id);
+      return {
+        id: user.id,
+        stellarAddress: user.stellarAddress,
+        username: user.username,
+        displayName: user.displayName,
+        bio: user.bio,
+        imageUrl: user.imageUrl,
+        avatarCid: user.avatarCid,
+        xHandle: user.xHandle,
+        createdAt: user.createdAt.toISOString(),
+        updatedAt: user.updatedAt.toISOString(),
+        ...stats,
+      };
+    })
+  );
+
   return {
-    profiles: users.map((user) => ({
-      ...user,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString(),
-    })),
+    profiles,
     total,
     page,
     limit,
   };
+}
+
+/**
+ * Deactivates (soft-deletes) the authenticated user's profile.
+ */
+export async function deactivateProfile(userId: string): Promise<void> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user || user.deletedAt !== null) {
+    throw new NotFoundError("Profile not found");
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { deletedAt: new Date() },
+  });
+
+  logger.info({ userId }, "Profile deactivated successfully");
 }
