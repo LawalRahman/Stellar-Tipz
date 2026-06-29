@@ -1,75 +1,85 @@
-import { Request, Response, NextFunction } from "express";
-import { z } from "zod";
-import { BadRequestError } from "../../common/errors/AppError.js";
-import { createTipSchema, tipIdSchema } from "./tips.schema.js";
-import { createTip, getTipById, listTips } from "./tips.service.js";
+import type { Request, Response, NextFunction } from 'express';
+import {
+  prepareTipSchema,
+  tipIdParamSchema,
+  usernameParamSchema,
+  tipsListQuerySchema,
+  getTipsQuerySchema,
+  recordTipSchema,
+  confirmTipParamSchema,
+} from './tips.schema.js';
+import * as tipsService from './tips.service.js';
 
-/**
- * POST /tips
- * Records/creates a new tip.
- */
-export async function createTipController(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
+/** GET /tips — filterable, cursor-paginated list of tips. */
+export async function getTips(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const data = createTipSchema.parse(req.body);
-    const tip = await createTip(data);
-    res.status(201).json(tip);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      next(new BadRequestError("Invalid tip data", error.issues));
-    } else {
-      next(error);
-    }
+    const { limit, cursor, address, direction } = getTipsQuerySchema.parse(req.query);
+    const result = await tipsService.getPaginatedTips({ limit, cursor, address, direction });
+    res.status(200).json({ data: result.data, nextCursor: result.nextCursor });
+  } catch (err) {
+    next(err);
   }
 }
 
-/**
- * GET /tips/:id
- * Retrieves a tip by ID.
- */
-export async function getTipController(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
+export async function prepare(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { id } = tipIdSchema.parse(req.params);
-    const tip = await getTipById(id);
-    res.json(tip);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      next(new BadRequestError("Invalid tip ID", error.issues));
-    } else {
-      next(error);
-    }
+    const { from, to, amount, message } = prepareTipSchema.parse(req.body);
+    const prepared = await tipsService.prepareTip(from, to, amount, message);
+    res.status(200).json({ data: prepared });
+  } catch (err) {
+    next(err);
   }
 }
 
-/**
- * GET /tips
- * Lists all tips with pagination and filters.
- */
-export async function listTipsController(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
+export async function getById(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
-    const recipientId = req.query.recipientId as string | undefined;
-    const senderId = req.query.senderId as string | undefined;
+    const { id } = tipIdParamSchema.parse(req.params);
+    const tip = await tipsService.getTipById(id);
+    res.status(200).json({ data: tip });
+  } catch (err) {
+    next(err);
+  }
+}
 
-    if (page < 1 || limit < 1 || limit > 100) {
-      throw new BadRequestError("Invalid pagination parameters");
-    }
+export async function getReceived(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { username } = usernameParamSchema.parse(req.params);
+    const { limit, cursor } = tipsListQuerySchema.parse(req.query);
+    const result = await tipsService.getTipsReceivedByUsername(username, limit, cursor);
+    res.status(200).json({ data: result.data, nextCursor: result.nextCursor });
+  } catch (err) {
+    next(err);
+  }
+}
 
-    const result = await listTips(page, limit, recipientId, senderId);
-    res.json(result);
-  } catch (error) {
-    next(error);
+export async function getSent(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { limit, cursor } = tipsListQuerySchema.parse(req.query);
+    const result = await tipsService.getTipsSentByAddress(req.user!.stellarAddress, limit, cursor);
+    res.status(200).json({ data: result.data, nextCursor: result.nextCursor });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** POST /tips — record an on-chain tip, idempotent by txHash. */
+export async function record(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const input = recordTipSchema.parse(req.body);
+    const tip = await tipsService.recordTip(input);
+    res.status(200).json({ data: tip });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** PATCH /tips/:txHash/confirm — transition tip to CONFIRMED, idempotent. */
+export async function confirm(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { txHash } = confirmTipParamSchema.parse(req.params);
+    const tip = await tipsService.confirmTip(txHash);
+    res.status(200).json({ data: tip });
+  } catch (err) {
+    next(err);
   }
 }
