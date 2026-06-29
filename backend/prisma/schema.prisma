@@ -18,7 +18,6 @@ model User {
   id             String   @id @default(cuid())
   stellarAddress String   @unique
   username       String?  @unique
-<<<<<<< HEAD
   displayName    String?
   bio            String?
   imageUrl       String?
@@ -26,9 +25,6 @@ model User {
   xHandle        String?
   role           String   @default("user")
   scopes         String[] @default([])
-  deletedAt      DateTime?
-=======
->>>>>>> upstream/test-implement-drips
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   /// Soft-delete marker: non-null means the record is logically deleted.
@@ -39,7 +35,6 @@ model User {
 
   tipperSubscriptions  Subscription[] @relation("SubscriptionTipper")
   creatorSubscriptions Subscription[] @relation("SubscriptionCreator")
-<<<<<<< HEAD
   sentTips             Tip[]                @relation("SentTips")
   receivedTips         Tip[]                @relation("ReceivedTips")
   creditScore          CreditScore?
@@ -48,13 +43,8 @@ model User {
   notifications        Notification[]
   leaderboardSnapshots LeaderboardSnapshot[]
   streak               Streak?
-=======
-  notifications        Notification[]
-  leaderboardSnapshots LeaderboardSnapshot[]
-  streak               Streak?
 
   @@index([createdAt])
->>>>>>> upstream/test-implement-drips
 }
 
 /// API key for service/admin access and webhook integrations.
@@ -87,6 +77,11 @@ model Tip {
   status        TipStatus @default(PENDING)
   message       String?
   refund        Refund?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sender        User?     @relation("SentTips", fields: [fromAddress], references: [stellarAddress])
+  receiver      User?     @relation("ReceivedTips", fields: [toAddress], references: [stellarAddress])
 
   @@index([toAddress, createdAt])
   @@index([fromAddress, createdAt])
@@ -208,6 +203,7 @@ model AuthChallenge {
   network         String
   /// UTC timestamp after which the challenge is no longer valid.
   expiresAt       DateTime
+  usedAt          DateTime?
 
   @@index([stellarAddress])
   @@index([expiresAt])

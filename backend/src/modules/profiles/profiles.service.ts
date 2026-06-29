@@ -16,14 +16,14 @@ import type {
 async function getTipStats(userId: string): Promise<{ tipsCount: number; totalReceived: string }> {
   const tipsCount = await prisma.tip.count({
     where: {
-      recipientId: userId,
+      receiver: { id: userId },
       status: "CONFIRMED",
     },
   });
 
   const aggregate = await prisma.tip.aggregate({
     where: {
-      recipientId: userId,
+      receiver: { id: userId },
       status: "CONFIRMED",
     },
     _sum: {
